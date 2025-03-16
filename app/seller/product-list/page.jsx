@@ -5,22 +5,35 @@ import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
 import Footer from "@/components/seller/Footer";
 import Loading from "@/components/Loading";
+import axios from "axios";
 
 const ProductList = () => {
 
-  const { router } = useAppContext()
+  const { router, getToken, user } = useAppContext()
 
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
 
   const fetchSellerProduct = async () => {
-    setProducts(productsDummyData)
-    setLoading(false)
+    try {
+      const token = await getToken()
+      const { data } = await axios.get('/api/product/seller-list', {headers:{Authorization: `Bearer ${token}`}})
+      if (data.success) {
+        setProducts(data.product)
+        setLoading(false)
+      } else {
+        toast.error(error.message)
+      }
+    } catch (error) {
+      
+    }
   }
 
   useEffect(() => {
+    if (user) {
     fetchSellerProduct();
-  }, [])
+    }
+  }, [user])
 
   return (
     <div className="flex-1 min-h-screen flex flex-col justify-between">
@@ -56,7 +69,7 @@ const ProductList = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3 max-sm:hidden">{product.category}</td>
-                  <td className="px-4 py-3">${product.offerPrice}</td>
+                  <td className="px-4 py-3">Rp.{product.offerPrice}</td>
                   <td className="px-4 py-3 max-sm:hidden">
                     <button onClick={() => router.push(`/product/${product._id}`)} className="flex items-center gap-1 px-1.5 md:px-3.5 py-2 bg-orange-600 text-white rounded-md">
                       <span className="hidden md:block">Visit</span>
