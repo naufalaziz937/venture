@@ -24,12 +24,12 @@ const Navbar = () => {
           Home
         </Link>
         <Link href="/all-products" className="hover:text-gray-900 transition">
-          Shop
+          Rent
         </Link>
-        <Link href="/" className="hover:text-gray-900 transition">
+        <Link href="/about" className="hover:text-gray-900 transition">
           About Us
         </Link>
-        <Link href="/" className="hover:text-gray-900 transition">
+        <Link href="/contact" className="hover:text-gray-900 transition">
           Contact
         </Link>
 

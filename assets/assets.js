@@ -1,4 +1,13 @@
-import logo from "./logo.svg";
+import logo from "./logo.png";
+import ransel from "./ransel.png";
+import sepatu from "./sepatu.png"
+import tongkat from './tongkat.png'
+import orang1 from './orang1.jpeg'
+import orang2 from './orang2.jpeg'
+import orang3 from './orang3.jpeg'
+import matras from './matras.png'
+import sleep from './sleep.png'
+import jaket1 from './jaket1.png'
 import search_icon from "./search_icon.svg";
 import user_icon from "./user_icon.svg";
 import cart_icon from "./cart_icon.svg";
@@ -49,6 +58,15 @@ import product_details_page_apple_earphone_image5 from "./product_details_page_a
 
 export const assets = {
   logo,
+  ransel,
+  sepatu,
+  tongkat,
+  orang1,
+  orang2,
+  orang3,
+  matras,
+  sleep,
+  jaket1,
   search_icon,
   user_icon,
   cart_icon,

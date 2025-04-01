@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { assets, orderDummyData } from "@/assets/assets";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
-import Footer from "@/components/seller/Footer";
 import Loading from "@/components/Loading";
 
 const Orders = () => {
@@ -53,7 +52,7 @@ const Orders = () => {
                                     <span>{order.address.phoneNumber}</span>
                                 </p>
                             </div>
-                            <p className="font-medium my-auto">{currency}{order.amount}</p>
+                            <p className="font-medium my-auto">Rp.{order.amount}</p>
                             <div>
                                 <p className="flex flex-col">
                                     <span>Method : COD</span>
@@ -65,7 +64,6 @@ const Orders = () => {
                     ))}
                 </div>
             </div>}
-            <Footer />
         </div>
     );
 };

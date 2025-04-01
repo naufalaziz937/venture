@@ -114,7 +114,7 @@ const AddProduct = () => {
           ></textarea>
         </div>
         <div className="flex items-center gap-5 flex-wrap">
-          <div className="flex flex-col gap-1 w-32">
+          <div className="flex flex-col gap-1 w-40">
             <label className="text-base font-medium" htmlFor="category">
               Category
             </label>
@@ -124,13 +124,10 @@ const AddProduct = () => {
               onChange={(e) => setCategory(e.target.value)}
               defaultValue={category}
             >
-              <option value="Earphone">Earphone</option>
-              <option value="Headphone">Headphone</option>
-              <option value="Watch">Watch</option>
-              <option value="Smartphone">Smartphone</option>
-              <option value="Laptop">Laptop</option>
-              <option value="Camera">Camera</option>
-              <option value="Accessories">Accessories</option>
+              <option value="Earphone">Main Equipment</option>
+              <option value="Headphone">Cooking Equipment</option>
+              <option value="Watch">Safety & Navigation Equipment</option>
+              <option value="Smartphone">Sleeping Equipment</option>
             </select>
           </div>
           <div className="flex flex-col gap-1 w-32">
@@ -162,7 +159,7 @@ const AddProduct = () => {
             />
           </div>
         </div>
-        <button type="submit" className="px-8 py-2.5 bg-orange-600 text-white font-medium rounded">
+        <button type="submit" className="px-8 py-2.5 bg-green-600 text-white font-medium rounded">
           ADD
         </button>
       </form>
