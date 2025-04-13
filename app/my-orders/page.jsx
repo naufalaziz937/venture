@@ -1,27 +1,54 @@
 'use client';
 import React, { useEffect, useState } from "react";
-import { assets, orderDummyData } from "@/assets/assets";
+import { assets } from "@/assets/assets";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import Loading from "@/components/Loading";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 const MyOrders = () => {
-
-    const { currency } = useAppContext();
+    const { currency, getToken, user } = useAppContext();
 
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchOrders = async () => {
-        setOrders(orderDummyData)
-        setLoading(false);
-    }
+        setLoading(true);
+        try {
+            const token = await getToken();
+            if (!token) {
+                toast.error("Token tidak ditemukan!");
+                setLoading(false);
+                return;
+            }
+
+            const { data } = await axios.get('/api/order/list', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (data.success) {
+                setOrders(data.orders.reverse());
+            } else {
+                toast.error(data.message || "Gagal mengambil data order.");
+            }
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || error.message || "Terjadi kesalahan.";
+            toast.error(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        fetchOrders();
-    }, []);
+        if (user) {
+            fetchOrders();
+        } else {
+            console.log("User belum login");
+        }
+    }, [user]);
 
     return (
         <>
@@ -29,44 +56,64 @@ const MyOrders = () => {
             <div className="flex flex-col justify-between px-6 md:px-16 lg:px-32 py-6 min-h-screen">
                 <div className="space-y-5">
                     <h2 className="text-lg font-medium mt-6">My Orders</h2>
-                    {loading ? <Loading /> : (<div className="max-w-5xl border-t border-gray-300 text-sm">
-                        {orders.map((order, index) => (
-                            <div key={index} className="flex flex-col md:flex-row gap-5 justify-between p-5 border-b border-gray-300">
-                                <div className="flex-1 flex gap-5 max-w-80">
-                                    <Image
-                                        className="max-w-16 max-h-16 object-cover"
-                                        src={assets.box_icon}
-                                        alt="box_icon"
-                                    />
-                                    <p className="flex flex-col gap-3">
-                                        <span className="font-medium text-base">
-                                            {order.items.map((item) => item.product.name + ` x ${item.quantity}`).join(", ")}
-                                        </span>
-                                        <span>Items : {order.items.length}</span>
-                                    </p>
-                                </div>
-                                <div>
-                                    <p>
-                                        <span className="font-medium">{order.address.fullName}</span>
-                                        <br />
-                                        <span >{order.address.area}</span>
-                                        <br />
-                                        <span>{`${order.address.city}, ${order.address.state}`}</span>
-                                        <br />
-                                        <span>{order.address.phoneNumber}</span>
-                                    </p>
-                                </div>
-                                <p className="font-medium my-auto">Rp.{order.amount}</p>
-                                <div>
-                                    <p className="flex flex-col">
-                                        <span>Method : COD</span>
-                                        <span>Date : {new Date(order.date).toLocaleDateString()}</span>
-                                        <span>Payment : Pending</span>
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>)}
+
+                    {loading ? (
+                        <Loading />
+                    ) : (
+                        <div className="max-w-5xl border-t border-gray-300 text-sm">
+                            {orders.length > 0 ? (
+                                orders.map((order, index) => (
+                                    <div
+                                        key={order._id || index}
+                                        className="flex flex-col md:flex-row gap-5 justify-between p-5 border-b border-gray-300"
+                                    >
+                                        {/* Produk */}
+                                        <div className="flex-1 flex gap-5 max-w-80">
+                                            <Image
+                                                className="max-w-16 max-h-16 object-cover"
+                                                src={assets.box_icon}
+                                                alt="box_icon"
+                                            />
+                                            <p className="flex flex-col gap-3">
+                                                <span className="font-medium text-base">
+                                                    {order.items?.map((item) => (
+                                                        `${item.product?.name || "Produk"} x ${item.quantity}`
+                                                    )).join(", ")}
+                                                </span>
+                                                <span>Items : {order.items?.length || 0}</span>
+                                            </p>
+                                        </div>
+
+                                        {/* Alamat */}
+                                        <div>
+                                            <p className="flex flex-col">
+                                                <span className="font-medium">{order.address?.fullName || "Nama tidak ada"}</span>
+                                                <span>{order.address?.area || "-"}</span>
+                                                <span>{order.address ? `${order.address.city}, ${order.address.state}` : "-"}</span>
+                                                <span>{order.address?.phoneNumber || "-"}</span>
+                                            </p>
+                                        </div>
+
+                                        {/* Harga */}
+                                        <p className="font-medium my-auto">
+                                            {currency} {order.amount?.toLocaleString() || "0"}
+                                        </p>
+
+                                        {/* Info Lain */}
+                                        <div>
+                                            <p className="flex flex-col">
+                                                <span>Method : {order.paymentMethod || "COD"}</span>
+                                                <span>Date : {order.date ? new Date(order.date).toLocaleDateString() : "-"}</span>
+                                                <span>Payment : {order.paymentStatus || "Pending"}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-center py-10 text-gray-500">Belum ada order.</p>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
             <Footer />
