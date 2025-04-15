@@ -77,14 +77,14 @@ const AddAddress = () => {
                             <input
                                 className="px-2 py-2.5 focus:border-green-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500"
                                 type="text"
-                                placeholder="City/District/Town"
+                                placeholder="City/District"
                                 onChange={(e) => setAddress({ ...address, city: e.target.value })}
                                 value={address.city}
                             />
                             <input
                                 className="px-2 py-2.5 focus:border-green-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500"
                                 type="text"
-                                placeholder="State"
+                                placeholder="Subdistrict"
                                 onChange={(e) => setAddress({ ...address, state: e.target.value })}
                                 value={address.state}
                             />

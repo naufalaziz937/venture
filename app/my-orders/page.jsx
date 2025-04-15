@@ -10,8 +10,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const MyOrders = () => {
-    const { currency, getToken, user } = useAppContext();
-
+    const { getToken, user } = useAppContext();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -55,6 +54,18 @@ const MyOrders = () => {
             <Navbar />
             <div className="flex flex-col justify-between px-6 md:px-16 lg:px-32 py-6 min-h-screen">
                 <div className="space-y-5">
+                    {/* Display user info */}
+                    <div className="flex items-center gap-3">
+                        <Image
+                            src={user?.imageUrl || assets.defaultAvatar}
+                            alt="User Avatar"
+                            width={40}
+                            height={40}
+                            className="rounded-full"
+                        />
+                        <span className="font-medium">{user?.name || "User"}</span>
+                    </div>
+
                     <h2 className="text-lg font-medium mt-6">My Orders</h2>
 
                     {loading ? (
@@ -62,9 +73,9 @@ const MyOrders = () => {
                     ) : (
                         <div className="max-w-5xl border-t border-gray-300 text-sm">
                             {orders.length > 0 ? (
-                                orders.map((order, index) => (
+                                orders.map((order) => (
                                     <div
-                                        key={order._id || index}
+                                        key={order._id}
                                         className="flex flex-col md:flex-row gap-5 justify-between p-5 border-b border-gray-300"
                                     >
                                         {/* Produk */}
@@ -96,7 +107,10 @@ const MyOrders = () => {
 
                                         {/* Harga */}
                                         <p className="font-medium my-auto">
-                                            {currency} {order.amount?.toLocaleString() || "0"}
+                                            {new Intl.NumberFormat("id-ID", {
+                                                style: "currency",
+                                                currency: "IDR",
+                                            }).format(order.amount || 0)}
                                         </p>
 
                                         {/* Info Lain */}
@@ -105,6 +119,7 @@ const MyOrders = () => {
                                                 <span>Method : {order.paymentMethod || "COD"}</span>
                                                 <span>Date : {order.date ? new Date(order.date).toLocaleDateString() : "-"}</span>
                                                 <span>Payment : {order.paymentStatus || "Pending"}</span>
+                                                <span>Delivery: {order.deliveryStatus || "Pending"}</span>
                                             </p>
                                         </div>
                                     </div>

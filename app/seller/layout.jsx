@@ -2,17 +2,24 @@
 import Footer from '@/components/seller/Footer'
 import Navbar from '@/components/seller/Navbar'
 import Sidebar from '@/components/seller/Sidebar'
+import { usePathname } from 'next/navigation'
 import React from 'react'
 
 const Layout = ({ children }) => {
+  const pathname = usePathname()
+  const isDashboard = pathname === '/seller'
+  const isUser = pathname === '/user-list'
+
   return (
     <div>
       <Navbar />
-      <div className='flex w-full'>
+      <div className="flex w-full">
         <Sidebar />
-        {children}
+        <div className={`${isDashboard || isUser? 'w-full' : 'flex-1'}`}>
+          {children}
+        </div>
       </div>
-      <Footer/>
+      <Footer />
     </div>
   )
 }

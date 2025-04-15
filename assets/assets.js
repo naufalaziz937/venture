@@ -8,6 +8,8 @@ import orang3 from './orang3.jpeg'
 import matras from './matras.png'
 import sleep from './sleep.png'
 import jaket1 from './jaket1.png'
+import dash from './dash.svg'
+import user from './user.svg'
 import search_icon from "./search_icon.svg";
 import user_icon from "./user_icon.svg";
 import cart_icon from "./cart_icon.svg";
@@ -50,11 +52,7 @@ import sm_controller_image from "./sm_controller_image.png";
 import jbl_soundbox_image from "./jbl_soundbox_image.png";
 import boy_with_laptop_image from "./boy_with_laptop_image.png";
 import checkmark from "./checkmark.png";
-import product_details_page_apple_earphone_image1 from "./product_details_page_apple_earphone_image1.png";
-import product_details_page_apple_earphone_image2 from "./product_details_page_apple_earphone_image2.png";
-import product_details_page_apple_earphone_image3 from "./product_details_page_apple_earphone_image3.png";
-import product_details_page_apple_earphone_image4 from "./product_details_page_apple_earphone_image4.png";
-import product_details_page_apple_earphone_image5 from "./product_details_page_apple_earphone_image5.png";
+
 
 export const assets = {
   logo,
@@ -67,6 +65,8 @@ export const assets = {
   matras,
   sleep,
   jaket1,
+  dash,
+  user,
   search_icon,
   user_icon,
   cart_icon,
@@ -108,11 +108,6 @@ export const assets = {
   sm_controller_image,
   jbl_soundbox_image,
   boy_with_laptop_image,
-  product_details_page_apple_earphone_image1,
-  product_details_page_apple_earphone_image2,
-  product_details_page_apple_earphone_image3,
-  product_details_page_apple_earphone_image4,
-  product_details_page_apple_earphone_image5,
   checkmark
 };
 

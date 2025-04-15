@@ -1,171 +1,92 @@
-'use client'
-import React, { useState } from "react";
-import { assets } from "@/assets/assets";
-import Image from "next/image";
-import { useAppContext } from "@/context/AppContext";
-import axios from "axios";
-import toast from "react-hot-toast";
+'use client';
+import React, { useEffect, useState } from 'react';
 
-const AddProduct = () => {
+const AdminDashboard = () => {
+    const [stats, setStats] = useState({
+        users: 0,
+        orders: 0,
+        revenue: 0,
+    });
 
-  const { getToken } = useAppContext()
+    const [loading, setLoading] = useState(true);
 
-  const [files, setFiles] = useState([]);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('Earphone');
-  const [price, setPrice] = useState('');
-  const [offerPrice, setOfferPrice] = useState('');
+    const [orders, setOrders] = useState([]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    useEffect(() => {
+        // Simulasi fetch data
+        setTimeout(() => {
+            setStats({
+                users: 120,
+                orders: 75,
+                revenue: 1500000,
+            });
+            setOrders([
+                { id: 1, customer: 'Brr Brr Patapim', amount: 250000, status: 'Pending' },
+                { id: 2, customer: 'Bombrito Bandito', amount: 500000, status: 'Completed' },
+                { id: 3, customer: 'Frigo Camello', amount: 750000, status: 'Pending' },
+                { id: 4, customer: 'Lirili Larila', amount: 100000, status: 'Pending' },
+            ]);
+            setLoading(false);
+        }, 1000);
+    }, []);
 
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('description', description);
-    formData.append('category', category);
-    formData.append('price', price);
-    formData.append('offerPrice', offerPrice);
-
-    for (let i = 0; i < files.length; i++) {
-      formData.append('images', files[i]); // Pastikan key "images" sesuai dengan di backend
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <p>Loading...</p>
+            </div>
+        );
     }
 
+    return (
+        <div className="min-h-screen bg-white p-6">
+            <h1 className="text-2xl font-bold mb-6 text-green-700">Admin Dashboard</h1>
 
-    try {
-      const token = await getToken();
-      const { data } = await axios.post('/api/product/add', formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+                    <h2 className="text-gray-500 text-sm">Total Users</h2>
+                    <p className="text-2xl font-semibold text-green-600">{stats.users}</p>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+                    <h2 className="text-gray-500 text-sm">Total Orders</h2>
+                    <p className="text-2xl font-semibold text-green-600">{stats.orders}</p>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+                    <h2 className="text-gray-500 text-sm">Total Revenue</h2>
+                    <p className="text-2xl font-semibold text-green-600">Rp. {stats.revenue.toLocaleString()}</p>
+                </div>
+            </div>
 
-      if (data.success) {
-        toast.success(data.message);
-        setFiles([]); // Reset ke array kosong
-        setName('');
-        setDescription('');
-        setCategory('Ransel');
-        setPrice('');
-        setOfferPrice('');
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Upload failed");
-    }
-  };
+            {/* Orders Table */}
+            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+                <h2 className="text-xl font-semibold mb-4 text-green-700">Recent Orders</h2>
+                <div className="overflow-x-auto">
+                    <table className="w-full table-auto">
+                        <thead>
+                            <tr className="bg-green-100 text-green-700 uppercase text-sm leading-normal">
+                                <th className="py-3 px-6 text-left">Order ID</th>
+                                <th className="py-3 px-6 text-left">Customer</th>
+                                <th className="py-3 px-6 text-left">Amount</th>
+                                <th className="py-3 px-6 text-left">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody className="text-gray-700 text-sm">
+                            {orders.map((order) => (
+                                <tr key={order.id} className="border-b border-gray-200 hover:bg-green-50">
+                                    <td className="py-3 px-6">{order.id}</td>
+                                    <td className="py-3 px-6">{order.customer}</td>
+                                    <td className="py-3 px-6">Rp. {order.amount.toLocaleString()}</td>
+                                    <td className="py-3 px-6">{order.status}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-
-  return (
-    <div className="flex-1 min-h-screen flex flex-col justify-between">
-      <form onSubmit={handleSubmit} className="md:p-10 p-4 space-y-5 max-w-lg">
-        <div>
-          <p className="text-base font-medium">Product Image</p>
-          <div className="flex flex-wrap items-center gap-3 mt-2">
-
-            {[...Array(4)].map((_, index) => (
-              <label key={index} htmlFor={`image${index}`}>
-                <input onChange={(e) => {
-                  const updatedFiles = [...files];
-                  updatedFiles[index] = e.target.files[0];
-                  setFiles(updatedFiles);
-                }} type="file" id={`image${index}`} hidden />
-                <Image
-                  key={index}
-                  className="max-w-24 cursor-pointer"
-                  src={files[index] ? URL.createObjectURL(files[index]) : assets.upload_area}
-                  alt=""
-                  width={100}
-                  height={100}
-                />
-              </label>
-            ))}
-
-          </div>
         </div>
-        <div className="flex flex-col gap-1 max-w-md">
-          <label className="text-base font-medium" htmlFor="product-name">
-            Product Name
-          </label>
-          <input
-            id="product-name"
-            type="text"
-            placeholder="Type here"
-            className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
-            onChange={(e) => setName(e.target.value)}
-            value={name}
-            required
-          />
-        </div>
-        <div className="flex flex-col gap-1 max-w-md">
-          <label
-            className="text-base font-medium"
-            htmlFor="product-description"
-          >
-            Product Description
-          </label>
-          <textarea
-            id="product-description"
-            rows={4}
-            className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40 resize-none"
-            placeholder="Type here"
-            onChange={(e) => setDescription(e.target.value)}
-            value={description}
-            required
-          ></textarea>
-        </div>
-        <div className="flex items-center gap-5 flex-wrap">
-          <div className="flex flex-col gap-1 w-40">
-            <label className="text-base font-medium" htmlFor="category">
-              Category
-            </label>
-            <select
-              id="category"
-              className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
-              onChange={(e) => setCategory(e.target.value)}
-              defaultValue={category}
-            >
-              <option value="Main Equipment">Main Equipment</option>
-              <option value="Cooking Equipment">Cooking Equipment</option>
-              <option value="Safety & Navigation Equipment">Safety & Navigation Equipment</option>
-              <option value="Sleeping Equipment">Sleeping Equipment</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-1 w-32">
-            <label className="text-base font-medium" htmlFor="product-price">
-              Product Price
-            </label>
-            <input
-              id="product-price"
-              type="number"
-              placeholder="0"
-              className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
-              onChange={(e) => setPrice(e.target.value)}
-              value={price}
-              required
-            />
-          </div>
-          <div className="flex flex-col gap-1 w-32">
-            <label className="text-base font-medium" htmlFor="offer-price">
-              Offer Price
-            </label>
-            <input
-              id="offer-price"
-              type="number"
-              placeholder="0"
-              className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
-              onChange={(e) => setOfferPrice(e.target.value)}
-              value={offerPrice}
-              required
-            />
-          </div>
-        </div>
-        <button type="submit" className="px-8 py-2.5 bg-green-600 text-white font-medium rounded">
-          ADD
-        </button>
-      </form>
-      {/* <Footer /> */}
-    </div>
-  );
+    );
 };
 
-export default AddProduct;
+export default AdminDashboard;
