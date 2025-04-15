@@ -102,13 +102,12 @@ const MyOrders = () => {
                                             }).format(order.amount || 0)}
                                         </p>
 
-                                        {/* Info Lain */}
-                                        <div>
-                                            <p className="flex flex-col">
-                                                <span>Method : {order.paymentMethod || "COD"}</span>
-                                                <span>Date : {order.date ? new Date(order.date).toLocaleDateString() : "-"}</span>
-                                                <span>Payment : {order.paymentStatus || "Pending"}</span>
-                                            </p>
+                                        {/* Status Info */}
+                                        <div className="flex flex-col justify-center items-end gap-2 min-w-[140px] text-right">
+                                            <p><strong>Method:</strong> {order.paymentMethod || "COD"}</p>
+                                            <p><strong>Date:</strong> {order.date ? new Date(order.date).toLocaleDateString() : "-"}</p>
+                                            <p><strong>Payment:</strong> {order.paymentStatus || "Pending"}</p>
+                                            <p><strong>Delivery:</strong> {order.deliveryStatus || "Pending"}</p>
                                         </div>
                                     </div>
                                 ))
@@ -122,6 +121,7 @@ const MyOrders = () => {
             <Footer />
         </>
     );
+
 };
 
 export default MyOrders;

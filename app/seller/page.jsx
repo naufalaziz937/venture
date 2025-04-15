@@ -1,4 +1,5 @@
 'use client';
+import Loading from '@/components/Loading';
 import React, { useEffect, useState } from 'react';
 
 const AdminDashboard = () => {
@@ -32,9 +33,7 @@ const AdminDashboard = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-screen">
-                <p>Loading...</p>
-            </div>
+            <Loading/>
         );
     }
 

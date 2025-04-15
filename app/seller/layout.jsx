@@ -8,6 +8,7 @@ import React from 'react'
 const Layout = ({ children }) => {
   const pathname = usePathname()
   const isDashboard = pathname === '/seller'
+  const isOrder = pathname === '/order'
   const isUser = pathname === '/user-list'
 
   return (
@@ -15,7 +16,7 @@ const Layout = ({ children }) => {
       <Navbar />
       <div className="flex w-full">
         <Sidebar />
-        <div className={`${isDashboard || isUser? 'w-full' : 'flex-1'}`}>
+        <div className={`${isDashboard || isOrder || isUser? 'w-full' : 'flex-1'}`}>
           {children}
         </div>
       </div>

@@ -10,6 +10,7 @@ import sleep from './sleep.png'
 import jaket1 from './jaket1.png'
 import dash from './dash.svg'
 import user from './user.svg'
+import report from './report.svg'
 import search_icon from "./search_icon.svg";
 import user_icon from "./user_icon.svg";
 import cart_icon from "./cart_icon.svg";
@@ -66,6 +67,7 @@ export const assets = {
   sleep,
   jaket1,
   dash,
+  report,
   user,
   search_icon,
   user_icon,
