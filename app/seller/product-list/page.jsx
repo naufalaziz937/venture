@@ -5,18 +5,18 @@ import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
 import Loading from "@/components/Loading";
 import axios from "axios";
+import toast from "react-hot-toast";
+
 
 const ProductList = () => {
-
   const { router, getToken, user } = useAppContext();
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [editLoading, setEditLoading] = useState(false);
-  const [files, setFiles] = useState([null, null, null, null]); // Array to hold the files
+  const [files, setFiles] = useState([null, null, null, null]);
 
-  // Fetch products for the seller
   const fetchSellerProduct = async () => {
     try {
       const token = await getToken();
@@ -38,17 +38,39 @@ const ProductList = () => {
     }
   }, [user]);
 
-  // Handle saving product (edit mode)
   const handleEditProduct = async () => {
     setEditLoading(true);
-    setTimeout(() => {
-      const updatedProducts = products.map(p =>
-        p._id === selectedProduct._id ? selectedProduct : p
-      );
-      setProducts(updatedProducts);
-      setSelectedProduct(null);
+    try {
+      const formData = new FormData();
+      formData.append("name", selectedProduct.name);
+      formData.append("category", selectedProduct.category);
+      formData.append("offerPrice", selectedProduct.offerPrice);
+      files.forEach((file, index) => {
+        if (file) {
+          formData.append("images", file);
+        }
+      });
+
+      const token = await getToken();
+      const { data } = await axios.put(`/api/product/${selectedProduct._id}`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (data.success) {
+        toast.success("Product updated successfully");
+        setSelectedProduct(null);
+        fetchSellerProduct();
+      } else {
+        toast.error("Failed to update product");
+      }
+    } catch (error) {
+      toast.error("Error updating product");
+    } finally {
       setEditLoading(false);
-    }, 1000); // Simulated delay
+    }
   };
 
   return (
@@ -110,7 +132,6 @@ const ProductList = () => {
         </div>
       </div>}
 
-      {/* Edit Product Modal */}
       {selectedProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-md shadow-lg w-11/12 md:w-1/2 max-w-xl">
@@ -146,7 +167,6 @@ const ProductList = () => {
                 />
               </div>
 
-              {/* Product Image Section */}
               <div>
                 <p className="text-base font-medium">Product Image</p>
                 <div className="flex flex-wrap items-center gap-3 mt-2">
