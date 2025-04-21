@@ -11,7 +11,6 @@ import toast from "react-hot-toast";
 
 const MyOrders = () => {
     const { getToken, user } = useAppContext();
-
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -45,10 +44,17 @@ const MyOrders = () => {
     useEffect(() => {
         if (user) {
             fetchOrders();
-        } else {
-            console.log("User belum login");
         }
     }, [user]);
+
+    const getStatusColor = (status) => {
+        if (!status) return 'bg-gray-500';
+        const lower = status.toLowerCase();
+        if (lower.includes('selesai')) return 'bg-green-500';
+        if (lower.includes('batal')) return 'bg-red-500';
+        if (lower.includes('perjalanan')) return 'bg-blue-500';
+        return 'bg-yellow-500';
+    };
 
     return (
         <>
@@ -62,9 +68,9 @@ const MyOrders = () => {
                     ) : (
                         <div className="max-w-5xl border-t border-gray-300 text-sm">
                             {orders.length > 0 ? (
-                                orders.map((order, index) => (
+                                orders.map((order) => (
                                     <div
-                                        key={order._id || index}
+                                        key={order._id}
                                         className="flex flex-col md:flex-row gap-5 justify-between p-5 border-b border-gray-300"
                                     >
                                         {/* Produk */}
@@ -76,9 +82,9 @@ const MyOrders = () => {
                                             />
                                             <p className="flex flex-col gap-3">
                                                 <span className="font-medium text-base">
-                                                    {order.items?.map((item) => (
+                                                    {order.items?.map((item) =>
                                                         `${item.product?.name || "Produk"} x ${item.quantity}`
-                                                    )).join(", ")}
+                                                    ).join(", ")}
                                                 </span>
                                                 <span>Items : {order.items?.length || 0}</span>
                                             </p>
@@ -106,8 +112,10 @@ const MyOrders = () => {
                                         <div className="flex flex-col justify-center items-end gap-2 min-w-[140px] text-right">
                                             <p><strong>Method:</strong> {order.paymentMethod || "COD"}</p>
                                             <p><strong>Date:</strong> {order.date ? new Date(order.date).toLocaleDateString() : "-"}</p>
-                                            <p><strong>Payment:</strong> {order.paymentStatus || "Pending"}</p>
-                                            <p><strong>Delivery:</strong> {order.deliveryStatus || "Pending"}</p>
+                                            <p className="flex items-center justify-end">
+                                                <span className={`inline-block w-2 h-2 rounded-full mr-1 ${getStatusColor(order.status)}`}></span>
+                                                <strong>Status:</strong> {order.status || '-'}
+                                            </p>
                                         </div>
                                     </div>
                                 ))
@@ -121,7 +129,6 @@ const MyOrders = () => {
             <Footer />
         </>
     );
-
 };
 
 export default MyOrders;

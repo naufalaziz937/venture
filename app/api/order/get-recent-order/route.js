@@ -12,20 +12,21 @@ export async function GET() {
         const orders = await Order.find()
             .sort({ date: -1 })
             .limit(10)
-            .populate("userId", "name")   // ambil field name dari koleksi User
+            .populate("userId", "name")
             .lean();
 
-        // Ubah ke objek plain dengan `id` unik
+        // Sertakan status di payload
         const recentOrders = orders.map(o => ({
-            id: o._id.toString(),               // unique key
-            name: o.userId?.name || "—",        // nama customer
+            id: o._id.toString(),
+            name: o.userId?.name || "—",
             amount: o.amount,
             date: o.date,
+            status: o.status,             // <— tambahkan status
         }));
 
         return NextResponse.json({ success: true, recentOrders });
     } catch (error) {
-        console.error("GET /api/order/get-recent-order error:", error);
+        console.error("GET /api/order/get-recent-orders error:", error);
         return NextResponse.json(
             { success: false, message: error.message },
             { status: 500 }
