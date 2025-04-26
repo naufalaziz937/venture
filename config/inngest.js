@@ -59,7 +59,7 @@ export const syncUserDeletion = inngest.createFunction(
     }
 )
 
-//order
+// order
 export const createUserOrder = inngest.createFunction(
     {
         id: 'create-user-order',
@@ -70,17 +70,33 @@ export const createUserOrder = inngest.createFunction(
     },
     { event: 'order/created' },
     async ({ events }) => {
-        const orders = events.map((event) => {
-            return {
-                userId: event.data.userId,
-                items: event.data.items,
-                amount: event.data.amount,
-                address: event.data.address,
-                date: event.data.date
-            }
-        })
-        await connectDB()
-        await Order.insertMany(orders)
-        return { success: true, processed: orders.length };
+        const orders = events.map(async (event) => {
+            const { userId, items, amount, address, date, voucherCode, discountAmount } = event.data;
+
+            // Menyimpan informasi voucher di order jika ada
+            const orderData = {
+                userId,
+                items,
+                amount,
+                address,
+                date,
+                voucherCode: voucherCode || null,  // Simpan voucher code jika ada
+                discountAmount: discountAmount || 0,  // Simpan discountAmount jika ada
+            };
+
+            // Return order data untuk disimpan di database
+            return orderData;
+        });
+
+        // Tunggu hingga semua data order selesai diproses
+        const orderDataArray = await Promise.all(orders);
+
+        // Koneksi ke database
+        await connectDB();
+
+        // Insert orders into database
+        await Order.insertMany(orderDataArray);
+
+        return { success: true, processed: orderDataArray.length };
     }
 )

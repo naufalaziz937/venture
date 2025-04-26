@@ -15,7 +15,11 @@ const Orders = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [status, setStatus] = useState('Order Placed');
-    const [isUpdating, setIsUpdating] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false); const [beforeImage, setBeforeImage] = useState(null);
+    const [afterImage, setAfterImage] = useState(null);
+    const [beforePreview, setBeforePreview] = useState(null);
+    const [afterPreview, setAfterPreview] = useState(null);
+
 
     const fetchSellerOrders = async () => {
         try {
@@ -51,37 +55,54 @@ const Orders = () => {
         setIsModalOpen(false);
     };
 
+    useEffect(() => {
+        if (beforeImage) setBeforePreview(URL.createObjectURL(beforeImage));
+    }, [beforeImage]);
+
+    useEffect(() => {
+        if (afterImage) setAfterPreview(URL.createObjectURL(afterImage));
+    }, [afterImage]);
+
+
     const updateOrderStatus = async () => {
         if (!selectedOrder) return;
-
         setIsUpdating(true);
         try {
+            const formData = new FormData();
+            formData.append("status", status);
+            if (beforeImage) formData.append("beforeImage", beforeImage);
+            if (afterImage) formData.append("afterImage", afterImage);
+
             const token = await getToken();
             const { data } = await axios.put(
                 `/api/order/update-order/${selectedOrder._id}`,
-                { status },
-                { headers: { Authorization: `Bearer ${token}` } }
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
             );
 
             if (data.success) {
                 toast.success("Status pesanan berhasil diperbarui");
-                setOrders(orders.map(order =>
-                    order._id === selectedOrder._id ? {
-                        ...order,
-                        status
-                    } : order
-                ));
+                setOrders((prev) =>
+                    prev.map((order) =>
+                        order._id === selectedOrder._id ? { ...order, status } : order
+                    )
+                );
                 closeModal();
             } else {
                 toast.error(data.message || "Gagal memperbarui status");
             }
-        } catch (error) {
-            console.error("Error updating order status:", error);
-            toast.error(error.response?.data?.message || "Terjadi kesalahan saat memperbarui status");
+        } catch (err) {
+            toast.error("Terjadi kesalahan saat memperbarui status");
+            console.error(err);
         } finally {
             setIsUpdating(false);
         }
     };
+
 
     const getStatusColor = (status) => {
         if (!status) return 'bg-gray-500';
@@ -173,6 +194,7 @@ const Orders = () => {
                     <div className="bg-white p-6 rounded-lg max-w-md w-full">
                         <h3 className="text-xl font-medium mb-4">Ubah Status Pesanan</h3>
 
+                        {/* Select Status */}
                         <div className="mb-6">
                             <label className="block font-medium mb-1">Status</label>
                             <select
@@ -190,6 +212,80 @@ const Orders = () => {
                             </select>
                         </div>
 
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            {/* Sebelum */}
+                            <div className="flex flex-col items-center">
+                                <p className="font-medium mb-1">Foto Sebelum</p>
+                                <label className="cursor-pointer">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        hidden
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0] || null;
+                                            setBeforeImage(file);
+                                            setBeforePreview(file ? URL.createObjectURL(file) : null);
+                                        }}
+                                    />
+                                    <div className="w-24 h-24 bg-gray-50 rounded overflow-hidden border border-dashed border-gray-300 flex items-center justify-center">
+                                        {beforePreview ? (
+                                            <Image src={beforePreview} alt="preview_before" width={96} height={96} className="object-cover" />
+                                        ) : selectedOrder?.beforeRentalImage ? (
+                                            <Image src={selectedOrder.beforeRentalImage} alt="uploaded_before" width={96} height={96} className="object-cover" />
+                                        ) : (
+                                            <div className="text-gray-400 text-xs text-center">Belum diupload</div>
+                                        )}
+                                    </div>
+                                </label>
+                                {/* Tombol View Full */}
+                                {(beforePreview || selectedOrder?.beforeRentalImage) && (
+                                    <button
+                                        onClick={() => window.open(beforePreview || selectedOrder.beforeRentalImage, "_blank")}
+                                        className="text-blue-600 text-xs mt-2 hover:underline"
+                                    >
+                                        View Full Image
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Sesudah */}
+                            <div className="flex flex-col items-center">
+                                <p className="font-medium mb-1">Foto Sesudah</p>
+                                <label className="cursor-pointer">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        hidden
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0] || null;
+                                            setAfterImage(file);
+                                            setAfterPreview(file ? URL.createObjectURL(file) : null);
+                                        }}
+                                    />
+                                    <div className="w-24 h-24 bg-gray-50 rounded overflow-hidden border border-dashed border-gray-300 flex items-center justify-center">
+                                        {afterPreview ? (
+                                            <Image src={afterPreview} alt="preview_after" width={96} height={96} className="object-cover" />
+                                        ) : selectedOrder?.afterRentalImage ? (
+                                            <Image src={selectedOrder.afterRentalImage} alt="uploaded_after" width={96} height={96} className="object-cover" />
+                                        ) : (
+                                            <div className="text-gray-400 text-xs text-center">Belum diupload</div>
+                                        )}
+                                    </div>
+                                </label>
+                                {/* Tombol View Full */}
+                                {(afterPreview || selectedOrder?.afterRentalImage) && (
+                                    <button
+                                        onClick={() => window.open(afterPreview || selectedOrder.afterRentalImage, "_blank")}
+                                        className="text-blue-600 text-xs mt-2 hover:underline"
+                                    >
+                                        View Full Image
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+
+                        {/* Button Aksi */}
                         <div className="flex justify-end gap-3">
                             <button
                                 onClick={closeModal}
@@ -198,13 +294,12 @@ const Orders = () => {
                                 Batal
                             </button>
                             <button
-                                onClick={updateOrderStatus}
+                                onClick={() => updateOrderStatus(beforeImage, afterImage)}
                                 disabled={isUpdating}
-                                className={`bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md transition-colors ${
-                                    isUpdating ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
+                                className={`bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md transition-colors ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
                             >
-                                {isUpdating ? 'Menyimpan...' : 'Simpan Perubahan'}
+                                {isUpdating ? "Menyimpan..." : "Simpan Perubahan"}
                             </button>
                         </div>
                     </div>

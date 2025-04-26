@@ -10,6 +10,9 @@ const orderSchema = new mongoose.Schema({
     address: { type: String, ref: 'Address', required: true },
     status: { type: String, required: true, default: 'Pending' },
     date: { type: Number, required: true },
+    beforeRentalImage: { type: String, required: false }, // Foto sebelum dirental
+    afterRentalImage: { type: String, required: false },  // Foto setelah dirental
+    discountAmount: { type: Number, default: 0 },
 });
 
 const Order = mongoose.models.order || mongoose.model('order', orderSchema);
