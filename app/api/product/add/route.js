@@ -14,7 +14,7 @@ cloudinary.config({
 
 export async function POST(request) {
     try {
-        await connectDB(); // ✅ Pastikan koneksi ke MongoDB dilakukan di awal
+        await connectDB();
 
         const { userId } = getAuth(request);
         const isSeller = await authSeller(userId);
@@ -24,7 +24,7 @@ export async function POST(request) {
         }
 
         const formData = await request.formData();
-        console.log("Form Data Received:", formData); // 🔍 Debugging
+        console.log("Form Data Received:", formData);
         
         const name = formData.get('name');
         const description = formData.get('description');
@@ -62,7 +62,7 @@ export async function POST(request) {
         const images = result.map(res => res.secure_url);
 
         const newProduct = await Product.create({
-            userId,  // ✅ Langsung pakai string, jangan dikonversi ke ObjectId
+            userId,
             name,
             description,
             category,

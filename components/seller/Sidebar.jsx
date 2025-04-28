@@ -12,8 +12,9 @@ const SideBar = () => {
         { name: 'Product List', path: '/seller/product-list', icon: assets.product_list_icon },
         { name: 'User Management', path: '/seller/user-list', icon: assets.user },
         { name: 'Orders', path: '/seller/orders', icon: assets.order_icon },
-        { name: 'Voucher', path: '/seller/voucher', icon: assets.report },
+        { name: 'Voucher', path: '/seller/voucher', icon: assets.voucher },
         { name: 'Report', path: '/seller/report', icon: assets.report },
+        { name: 'Sanctions', path: '/seller/sanksi', icon: assets.tax },
     ];
 
     return (

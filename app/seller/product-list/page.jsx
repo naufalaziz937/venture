@@ -173,6 +173,126 @@ const ProductList = () => {
           </div>
         </div>
       )}
+            {/* Modal Edit */}
+            {selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg">
+            <h3 className="text-xl font-semibold text-green-600 mb-4">Edit Product</h3>
+            <div className="space-y-4">
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium">Product Name</label>
+                <input
+                  className="w-full p-2 border rounded"
+                  value={selectedProduct.name}
+                  onChange={(e) =>
+                    setSelectedProduct({ ...selectedProduct, name: e.target.value })
+                  }
+                />
+              </div>
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium">Description</label>
+                <textarea
+                  className="w-full p-2 border rounded"
+                  rows={3}
+                  value={selectedProduct.description}
+                  onChange={(e) =>
+                    setSelectedProduct({ ...selectedProduct, description: e.target.value })
+                  }
+                />
+              </div>
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium">Category</label>
+                <select
+                  className="w-full p-2 border rounded"
+                  value={selectedProduct.category}
+                  onChange={(e) =>
+                    setSelectedProduct({ ...selectedProduct, category: e.target.value })
+                  }
+                >
+                  <option value="Main Equipment">Main Equipment</option>
+                  <option value="Cooking Equipment">Cooking Equipment</option>
+                  <option value="Safety & Navigation Equipment">Safety & Navigation Equipment</option>
+                  <option value="Sleeping Equipment">Sleeping Equipment</option>
+                </select>
+              </div>
+              {/* Price */}
+              <div>
+                <label className="block text-sm font-medium">Price</label>
+                <input
+                  type="number"
+                  className="w-full p-2 border rounded"
+                  value={selectedProduct.price}
+                  onChange={(e) =>
+                    setSelectedProduct({ ...selectedProduct, price: e.target.value })
+                  }
+                />
+              </div>
+              {/* Offer Price */}
+              <div>
+                <label className="block text-sm font-medium">Offer Price</label>
+                <input
+                  type="number"
+                  className="w-full p-2 border rounded"
+                  value={selectedProduct.offerPrice}
+                  onChange={(e) =>
+                    setSelectedProduct({ ...selectedProduct, offerPrice: e.target.value })
+                  }
+                />
+              </div>
+              {/* Images */}
+              <div>
+                <p className="font-medium">Product Images (max 4)</p>
+                <div className="flex flex-wrap gap-3 mt-2">
+                  {[0, 1, 2, 3].map((idx) => (
+                    <label key={idx} className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          setFiles((f) => {
+                            const arr = [...f];
+                            arr[idx] = file;
+                            return arr;
+                          });
+                        }}
+                      />
+                      <div className="w-20 h-20 bg-gray-50 rounded overflow-hidden border flex items-center justify-center">
+                        {files[idx]
+                          ? <Image src={URL.createObjectURL(files[idx])} alt="preview" width={80} height={80} />
+                          : selectedProduct.image[idx]
+                            ? <Image src={selectedProduct.image[idx]} alt="current" width={80} height={80} />
+                            : <Image src={assets.upload_area} alt="upload" width={80} height={80} />
+                        }
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {/* Actions */}
+              <div className="flex justify-end gap-3 mt-4">
+                <button
+                  onClick={() => setSelectedProduct(null)}
+                  className="px-4 py-2 bg-gray-300 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditProduct}
+                  disabled={editLoading}
+                  className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50"
+                >
+                  {editLoading ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Delete Confirmation */}
       {isDeleteModalOpen && selectedProduct && (
