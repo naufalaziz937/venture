@@ -9,7 +9,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 export async function POST(request) {
     try {
         const { userId } = getAuth(request);
-        const { address, items } = await request.json();
+        const { address, items, voucherCode } = await request.json(); // ambil voucherCode juga
         const origin = request.headers.get('origin');
 
         if (!address || !items || items.length === 0) {
@@ -17,7 +17,7 @@ export async function POST(request) {
         }
 
         let productData = [];
-        let amount = 0;
+        let subtotal = 0;
 
         for (const item of items) {
             const product = await Product.findById(item.product);
@@ -29,17 +29,37 @@ export async function POST(request) {
                 quantity: item.quantity
             });
 
-            amount += product.offerPrice * item.quantity;
+            subtotal += product.offerPrice * item.quantity;
         }
 
-        const finalAmount = amount + Math.floor(amount * 0.12);
+        // Pajak 12%
+        let totalAmount = subtotal + Math.floor(subtotal * 0.12);
+
+        // Kalau ada voucher
+        if (voucherCode) {
+            const Voucher = (await import('@/models/voucher')).default;
+            const voucher = await Voucher.findOne({ code: voucherCode });
+
+            if (voucher) {
+                if (voucher.type === 'percent') {
+                    const diskon = Math.floor(subtotal * voucher.amount / 100);
+                    totalAmount -= diskon;
+                } else if (voucher.type === 'fixed') {
+                    totalAmount -= voucher.amount;
+                }
+
+                // Naikin counter usage voucher
+                voucher.usedCount = (voucher.usedCount || 0) + 1;
+                await voucher.save();
+            }
+        }
 
         // Simpan order ke database
         const order = await Order.create({
             userId,
             address,
             items,
-            amount: finalAmount,
+            amount: totalAmount,
             date: Date.now(),
             paymentType: 'Stripe'
         });

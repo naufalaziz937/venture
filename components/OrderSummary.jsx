@@ -1,6 +1,8 @@
 'use client';
+import { assets } from "@/assets/assets";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
+import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -19,6 +21,7 @@ const OrderSummary = () => {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userAddresses, setUserAddresses] = useState([]);
+  const [isPlacedOrderClicked, setIsPlacedOrderClicked] = useState(false);
 
 
   // Voucher
@@ -54,39 +57,39 @@ const OrderSummary = () => {
     setIsDropdownOpen(false);
   };
 
-// sebelum: handleApplyPromo
-const handleApplyPromo = async () => {
-  if (!promoCode) { toast.error("Masukkan kode promo"); return; }
-  try {
-    const { data } = await axios.get(`/api/voucher/validate?code=${promoCode}`);
-    if (!data.success) {
-      toast.error(data.message);
+  // sebelum: handleApplyPromo
+  const handleApplyPromo = async () => {
+    if (!promoCode) { toast.error("Masukkan kode promo"); return; }
+    try {
+      const { data } = await axios.get(`/api/voucher/validate?code=${promoCode}`);
+      if (!data.success) {
+        toast.error(data.message);
+        setVoucherCode(null);
+        setDiscountAmount(0);
+        return;
+      }
+      const v = data.voucher;
+      const subtotal = getCartAmount();
+      let discount = 0;
+      if (v.type === "fixed") {
+        discount = v.amount;
+      } else { // percent
+        discount = Math.floor((subtotal * v.amount) / 100);
+      }
+      setVoucherCode(v.code);
+      setDiscountAmount(discount);
+      toast.success(`Diskon Rp.${discount.toLocaleString("id-ID")}`);
+    } catch (err) {
+      toast.error("Gagal validasi voucher");
       setVoucherCode(null);
       setDiscountAmount(0);
-      return;
     }
-    const v = data.voucher;
-    const subtotal = getCartAmount();
-    let discount = 0;
-    if (v.type === "fixed") {
-      discount = v.amount;
-    } else { // percent
-      discount = Math.floor((subtotal * v.amount) / 100);
-    }
-    setVoucherCode(v.code);
-    setDiscountAmount(discount);
-    toast.success(`Diskon Rp.${discount.toLocaleString("id-ID")}`);
-  } catch (err) {
-    toast.error("Gagal validasi voucher");
-    setVoucherCode(null);
-    setDiscountAmount(0);
-  }
-};
+  };
 
-// dan di render:
-const subtotal = getCartAmount();
-const tax = Math.floor(subtotal * 0.12);
-const total = subtotal + tax - discountAmount;
+  // dan di render:
+  const subtotal = getCartAmount();
+  const tax = Math.floor(subtotal * 0.12);
+  const total = subtotal + tax - discountAmount;
 
 
   // Buat order
@@ -137,10 +140,10 @@ const total = subtotal + tax - discountAmount;
     }
   };
 
-    const createOrderStripe = async () => {
-      try {
-        
-              if (!selectedAddress) {
+  const createOrderStripe = async () => {
+    try {
+
+      if (!selectedAddress) {
         toast.error("Pilih alamat terlebih dahulu");
         return;
       }
@@ -178,10 +181,10 @@ const total = subtotal + tax - discountAmount;
         toast.error(data.message)
       }
 
-      } catch (error) {
-        toast.error(error.message)
-      }
+    } catch (error) {
+      toast.error(error.message)
     }
+  }
 
   return (
     <div className="w-full md:w-96 bg-gray-50 p-5">
@@ -204,9 +207,8 @@ const total = subtotal + tax - discountAmount;
                 : "Choose address"}
             </span>
             <svg
-              className={`w-5 h-5 transform transition ${
-                isDropdownOpen ? "rotate-180" : ""
-              }`}
+              className={`w-5 h-5 transform transition ${isDropdownOpen ? "rotate-180" : ""
+                }`}
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -284,12 +286,31 @@ const total = subtotal + tax - discountAmount;
       </div>
 
       {/* Tombol */}
-        <button
-          onClick={createOrderStripe}
-          className="w-full mt-5 py-3 bg-green-600 text-white rounded hover:bg-green-700"
-        >
-          Place Order
-        </button>
+      {
+        !isPlacedOrderClicked ? (
+          <button
+            onClick={() => setIsPlacedOrderClicked(true)}
+            className="w-full mt-5 py-3 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            Place Order
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              onClick={createOrder}
+              className="w-full mt-5 py-3 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Cash On Delivery
+            </button>
+            <button
+              onClick={createOrderStripe}
+              className="w-full flex justify-center items-center border border-indigo-500 bg-white hover:bg-gray-100 mt-5 py-3  "
+            >
+              <Image className="w-12" src={assets.stripe_logo} alt="" />
+            </button>
+          </div>
+        )
+      }
     </div>
   );
 };

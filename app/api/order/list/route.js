@@ -21,7 +21,7 @@ export async function GET(request) {
             Product.findOne()
         ]);
 
-        const orders = await Order.find({ userId }).populate('address items.product');
+        const orders = await Order.find({ userId, $or: [{ paymentType: 'COD'}, {paymentType: 'Stripe', isPaid: true}]}).populate('address items.product');
 
         return NextResponse.json({ success: true, orders });
     } catch (error) {

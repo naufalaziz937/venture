@@ -167,12 +167,13 @@ const Orders = () => {
                                     {/* Status & Button */}
                                     <div className="flex flex-col justify-center items-end gap-2 min-w-[140px]">
                                         <div className="text-sm text-gray-700">
-                                            <p><strong>Metode:</strong> {order.paymentMethod || "COD"}</p>
-                                            <p><strong>Tanggal:</strong> {order.date ? new Date(order.date).toLocaleDateString('id-ID') : "-"}</p>
-                                            <p className="flex items-center">
+                                            <p><strong>Method:</strong> {order.paymentType || "COD"}</p>
+                                            <p><strong>Date:</strong> {order.date ? new Date(order.date).toLocaleDateString() : "-"}</p>
+                                            <p className="flex items-center justify-end">
                                                 <span className={`inline-block w-2 h-2 rounded-full mr-1 ${getStatusColor(order.status)}`}></span>
-                                                <strong>Status:</strong> {order.status || '-'}
+                                                <strong>Delivery:</strong> {order.status || '-'}
                                             </p>
+                                            <p><strong>Payment:</strong> {order.isPaid ? 'Paid' : 'Pending'} </p>
                                         </div>
                                         <button
                                             onClick={() => openModal(order)}

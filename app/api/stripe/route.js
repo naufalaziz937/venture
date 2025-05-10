@@ -28,8 +28,23 @@ export async function POST(request) {
             await connectDB();
 
             if (isPaid) {
+                // Tandai order sebagai paid
                 await Order.findByIdAndUpdate(orderId, { isPaid: true });
+
+                // Kosongkan cart user
                 await User.findByIdAndUpdate(userId, { cartItems: {} });
+
+                // Cek apakah ada voucher yang digunakan
+                const order = await Order.findById(orderId);
+                if (order && order.voucherCode) {
+                    const Voucher = (await import('@/models/voucher')).default;
+                    const voucher = await Voucher.findOne({ code: order.voucherCode });
+
+                    if (voucher) {
+                        voucher.usedCount = (voucher.usedCount || 0) + 1;
+                        await voucher.save();
+                    }
+                }
             } else {
                 await Order.findByIdAndDelete(orderId);
             }
