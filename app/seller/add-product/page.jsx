@@ -13,7 +13,7 @@ const AddProduct = () => {
   const [files, setFiles] = useState([]);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('Earphone');
+  const [category, setCategory] = useState('');
   const [price, setPrice] = useState('');
   const [offerPrice, setOfferPrice] = useState('');
 
@@ -43,7 +43,7 @@ const AddProduct = () => {
         setFiles([]); // Reset ke array kosong
         setName('');
         setDescription('');
-        setCategory('Ransel');
+        setCategory('');
         setPrice('');
         setOfferPrice('');
       } else {

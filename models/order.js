@@ -13,6 +13,8 @@ const orderSchema = new mongoose.Schema({
     beforeRentalImage: { type: String, required: false }, // Foto sebelum dirental
     afterRentalImage: { type: String, required: false },  // Foto setelah dirental
     discountAmount: { type: Number, default: 0 },
+    paymentType: {type: String, required: true},
+    isPaid: { type: Boolean, required: true, default: false},
 });
 
 const Order = mongoose.models.order || mongoose.model('order', orderSchema);

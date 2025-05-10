@@ -20,6 +20,7 @@ const OrderSummary = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userAddresses, setUserAddresses] = useState([]);
 
+
   // Voucher
   const [promoCode, setPromoCode] = useState("");
   const [voucherCode, setVoucherCode] = useState(null);
@@ -136,6 +137,51 @@ const total = subtotal + tax - discountAmount;
     }
   };
 
+    const createOrderStripe = async () => {
+      try {
+        
+              if (!selectedAddress) {
+        toast.error("Pilih alamat terlebih dahulu");
+        return;
+      }
+      // Prepare items
+      const items = Object.entries(cartItems)
+        .map(([product, qty]) => ({ product, quantity: qty }))
+        .filter((it) => it.quantity > 0);
+
+      if (items.length === 0) {
+        toast.error("Keranjang kosong");
+        return;
+      }
+
+      const token = await getToken();
+      if (!token) {
+        toast.error("Anda harus login");
+        return;
+      }
+
+      // Hitung final amount di backend konsisten
+      const { data } = await axios.post(
+        "/api/order/stripe",
+        {
+          address: selectedAddress._id,
+          items,
+          voucherCode,
+          discountAmount,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (data.success) {
+        window.location.href = data.url
+      } else {
+        toast.error(data.message)
+      }
+
+      } catch (error) {
+        toast.error(error.message)
+      }
+    }
 
   return (
     <div className="w-full md:w-96 bg-gray-50 p-5">
@@ -237,12 +283,13 @@ const total = subtotal + tax - discountAmount;
         </div>
       </div>
 
-      <button
-        onClick={createOrder}
-        className="mt-6 w-full bg-green-600 text-white py-3 rounded hover:bg-green-700"
-      >
-        Place Order
-      </button>
+      {/* Tombol */}
+        <button
+          onClick={createOrderStripe}
+          className="w-full mt-5 py-3 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Place Order
+        </button>
     </div>
   );
 };

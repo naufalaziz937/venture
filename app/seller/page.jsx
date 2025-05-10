@@ -10,28 +10,24 @@ const AdminDashboard = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                // Fetch total users
                 const resUsers = await fetch('/api/user/get-total-user');
                 if (resUsers.ok) {
                     const { users } = await resUsers.json();
                     setStats(prev => ({ ...prev, users }));
                 }
 
-                // Fetch total orders
                 const resOrders = await fetch('/api/order/get-total-order');
                 if (resOrders.ok) {
                     const { orders } = await resOrders.json();
                     setStats(prev => ({ ...prev, orders }));
                 }
 
-                // Fetch total revenue
                 const resRevenue = await fetch('/api/order/get-total-revenue');
                 if (resRevenue.ok) {
                     const { revenue } = await resRevenue.json();
                     setStats(prev => ({ ...prev, revenue }));
                 }
 
-                // Fetch recent orders
                 const resRecent = await fetch('/api/order/get-recent-order');
                 if (resRecent.ok) {
                     const { recentOrders } = await resRecent.json();
@@ -47,7 +43,6 @@ const AdminDashboard = () => {
         fetchStats();
     }, []);
 
-    // Determine badge color based on status
     const getStatusColor = (status) => {
         if (!status) return 'bg-gray-500';
         const s = status.toLowerCase();
@@ -60,7 +55,8 @@ const AdminDashboard = () => {
     if (loading) return <Loading />;
 
     return (
-        <div className="min-h-screen bg-white p-6">
+    <div className="flex-1 min-h-screen flex flex-col justify-between">
+        <div className="w-full md:p-10 p-4">
             <h1 className="text-2xl font-bold mb-6 text-green-700">Admin Dashboard</h1>
 
             {/* Stats */}
@@ -111,6 +107,7 @@ const AdminDashboard = () => {
                 </div>
             </div>
         </div>
+    </div>
     );
 };
 
