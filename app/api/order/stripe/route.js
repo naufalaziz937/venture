@@ -1,24 +1,29 @@
+import connectDB from "@/config/db";
 import Order from "@/models/order";
+import Product from "@/models/product";
+import Voucher from "@/models/voucher"; // <- pastikan model ini ada
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import Product from "@/models/product";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(request) {
     try {
+        await connectDB(); // konek DB dulu
+
         const { userId } = getAuth(request);
-        const { address, items, voucherCode } = await request.json(); // ambil voucherCode juga
-        const origin = request.headers.get('origin');
+        const { address, items, voucherCode } = await request.json();
+        const origin = request.headers.get("origin");
 
         if (!address || !items || items.length === 0) {
-            return NextResponse.json({ success: false, message: 'Invalid data' });
+            return NextResponse.json({ success: false, message: "Invalid data" });
         }
 
         let productData = [];
         let subtotal = 0;
 
+        // Ambil info produk
         for (const item of items) {
             const product = await Product.findById(item.product);
             if (!product) continue;
@@ -32,19 +37,18 @@ export async function POST(request) {
             subtotal += product.offerPrice * item.quantity;
         }
 
-        // Pajak 12%
-        let totalAmount = subtotal + Math.floor(subtotal * 0.12);
+        let totalAmount = subtotal;
 
         // Kalau ada voucher
+        let voucher;
         if (voucherCode) {
-            const Voucher = (await import('@/models/voucher')).default;
-            const voucher = await Voucher.findOne({ code: voucherCode });
+            voucher = await Voucher.findOne({ code: voucherCode });
 
             if (voucher) {
-                if (voucher.type === 'percent') {
+                if (voucher.type === "percent") {
                     const diskon = Math.floor(subtotal * voucher.amount / 100);
                     totalAmount -= diskon;
-                } else if (voucher.type === 'fixed') {
+                } else if (voucher.type === "fixed") {
                     totalAmount -= voucher.amount;
                 }
 
@@ -54,30 +58,48 @@ export async function POST(request) {
             }
         }
 
-        // Simpan order ke database
+        // Pajak 12%
+        totalAmount += Math.floor(totalAmount * 0.12);
+
+        // Simpan order ke DB
         const order = await Order.create({
             userId,
             address,
             items,
             amount: totalAmount,
             date: Date.now(),
-            paymentType: 'Stripe'
+            paymentType: "Stripe"
         });
 
-        const line_items = productData.map(item => ({
-            price_data: {
-                currency: 'idr',
-                product_data: {
-                    name: item.name
-                },
-                unit_amount: item.price * 100, // Harga harus dalam sen
-            },
-            quantity: item.quantity
-        }));
+        // Buat line_items dengan diskon langsung di potong
+        const line_items = productData.map((item) => {
+            let unitPrice = item.price;
 
+            if (voucher) {
+                if (voucher.type === "percent") {
+                    unitPrice = Math.floor(unitPrice - (unitPrice * voucher.amount / 100));
+                } else if (voucher.type === "fixed") {
+                    const potonganPerItem = Math.floor(voucher.amount / productData.length);
+                    unitPrice = Math.max(unitPrice - potonganPerItem, 0);
+                }
+            }
+
+            return {
+                price_data: {
+                    currency: "idr",
+                    product_data: {
+                        name: item.name
+                    },
+                    unit_amount: unitPrice * 100 // dalam sen
+                },
+                quantity: item.quantity
+            };
+        });
+
+        // Buat sesi Stripe
         const session = await stripe.checkout.sessions.create({
             line_items,
-            mode: 'payment',
+            mode: "payment",
             success_url: `${origin}/order-placed`,
             cancel_url: `${origin}/cart`,
             metadata: {
