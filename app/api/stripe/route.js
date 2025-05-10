@@ -1,54 +1,63 @@
-import connectDB from "@/config/db"
-import Order from "@/models/order"
-import User from "@/models/user"
-import { NextResponse } from "next/server"
-import Stripe from "stripe"
+import connectDB from "@/config/db";
+import Order from "@/models/order";
+import User from "@/models/user";
+import { NextResponse } from "next/server";
+import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(request) {
     try {
-        const body = await request.text()
-        const sig = request.headers.get('stripe-signature')
-        const event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET)
+        const body = await request.text();
+        const sig = request.headers.get("stripe-signature");
 
-        const handlePayment = async (paymentIntentId,isPaid) => {
-            const session = await stripe.checkout.sessions.list({
-                payment_intent:paymentIntentId
-            })
-            const {orderid, userId} = session.data[0].metadata
+        const event = stripe.webhooks.constructEvent(
+            body,
+            sig,
+            process.env.STRIPE_WEBHOOK_SECRET
+        );
 
-            await connectDB()
+        const handlePayment = async (paymentIntentId, isPaid) => {
+            const sessionList = await stripe.checkout.sessions.list({
+                payment_intent: paymentIntentId,
+            });
+
+            const session = sessionList.data[0];
+            const { orderId, userId } = session.metadata;
+
+            await connectDB();
+
             if (isPaid) {
-                await Order.findByIdAndUpdate(orderid,{isPaid:true})
-                await User.findByIdAndUpdate(userId, {cartItems:{}})
+                await Order.findByIdAndUpdate(orderId, { isPaid: true });
+                await User.findByIdAndUpdate(userId, { cartItems: {} });
             } else {
-                await Order.findByIdAndDelete(orderid)
+                await Order.findByIdAndDelete(orderId);
             }
-        }
+        };
 
         switch (event.type) {
-            case 'payment_intent.succeeded': {
-                await handlePaymentIntent(event.data.object.id, true)
+            case "payment_intent.succeeded": {
+                await handlePayment(event.data.object.id, true);
                 break;
             }
-            case 'payment_intent.canceled': {
-                await handlePaymentIntent(event.data.object.id, false)
+            case "payment_intent.canceled": {
+                await handlePayment(event.data.object.id, false);
                 break;
             }
             default:
-                console.error(event.type)
+                console.error(`Unhandled event type: ${event.type}`);
                 break;
         }
 
-        return NextResponse.json({ received: true})
+        return NextResponse.json({ received: true });
     } catch (error) {
-        console.error(error)
-        return NextResponse.json({ message: error.message})
-
+        console.error(error);
+        return NextResponse.json({ message: error.message });
     }
 }
 
 export const config = {
-    api: { bodyParser: false }
-}
+    api: {
+        bodyParser: false,
+    },
+};
