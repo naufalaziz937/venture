@@ -34,9 +34,9 @@ export async function POST(request) {
                 // Kosongkan cart user
                 await User.findByIdAndUpdate(userId, { cartItems: {} });
 
-                // Cek apakah ada voucher yang digunakan
+                // Cek dan update penggunaan voucher jika ada
                 const order = await Order.findById(orderId);
-                if (order && order.voucherCode) {
+                if (order?.voucherCode) {
                     const Voucher = (await import('@/models/voucher')).default;
                     const voucher = await Voucher.findOne({ code: order.voucherCode });
 
@@ -45,20 +45,20 @@ export async function POST(request) {
                         await voucher.save();
                     }
                 }
+
             } else {
+                // Hapus order kalau pembayaran gagal/batal
                 await Order.findByIdAndDelete(orderId);
             }
         };
 
         switch (event.type) {
-            case "payment_intent.succeeded": {
+            case "payment_intent.succeeded":
                 await handlePayment(event.data.object.id, true);
                 break;
-            }
-            case "payment_intent.canceled": {
+            case "payment_intent.canceled":
                 await handlePayment(event.data.object.id, false);
                 break;
-            }
             default:
                 console.error(`Unhandled event type: ${event.type}`);
                 break;

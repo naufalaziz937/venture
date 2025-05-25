@@ -9,7 +9,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 export async function POST(request) {
     try {
         const { userId } = getAuth(request);
-        const { address, items, voucherCode } = await request.json(); // ambil voucherCode juga
+        const { address, items, voucherCode, discountAmount = 0 } = await request.json();
         const origin = request.headers.get('origin');
 
         if (!address || !items || items.length === 0) {
@@ -33,26 +33,7 @@ export async function POST(request) {
         }
 
         // Pajak 12%
-        let totalAmount = subtotal + Math.floor(subtotal * 0.12);
-
-        // Kalau ada voucher
-        if (voucherCode) {
-            const Voucher = (await import('@/models/voucher')).default;
-            const voucher = await Voucher.findOne({ code: voucherCode });
-
-            if (voucher) {
-                if (voucher.type === 'percent') {
-                    const diskon = Math.floor(subtotal * voucher.amount / 100);
-                    totalAmount -= diskon;
-                } else if (voucher.type === 'fixed') {
-                    totalAmount -= voucher.amount;
-                }
-
-                // Naikin counter usage voucher
-                voucher.usedCount = (voucher.usedCount || 0) + 1;
-                await voucher.save();
-            }
-        }
+        let totalAmount = subtotal + Math.floor(subtotal * 0.12) - discountAmount;
 
         // Simpan order ke database
         const order = await Order.create({
@@ -61,7 +42,9 @@ export async function POST(request) {
             items,
             amount: totalAmount,
             date: Date.now(),
-            paymentType: 'Stripe'
+            paymentType: 'Stripe',
+            voucherCode, // disimpan buat tracking walau gak divalidasi di sini
+            discountAmount // juga simpan total diskon
         });
 
         const line_items = productData.map(item => ({
@@ -70,10 +53,24 @@ export async function POST(request) {
                 product_data: {
                     name: item.name
                 },
-                unit_amount: item.price * 100, // Harga harus dalam sen
+                unit_amount: item.price * 100, // Harga dalam sen
             },
             quantity: item.quantity
         }));
+
+        // Tambahin diskon ke Stripe line item kalau ada
+        if (discountAmount > 0) {
+            line_items.push({
+                price_data: {
+                    currency: 'idr',
+                    product_data: {
+                        name: `Voucher: ${voucherCode || 'Discount'}`
+                    },
+                    unit_amount: -discountAmount * 100, // diskon dalam sen (negatif)
+                },
+                quantity: 1
+            });
+        }
 
         const session = await stripe.checkout.sessions.create({
             line_items,

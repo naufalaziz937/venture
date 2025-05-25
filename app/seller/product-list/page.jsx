@@ -16,10 +16,10 @@ const ProductList = () => {
   const [editLoading, setEditLoading] = useState(false);
   const [files, setFiles] = useState([null, null, null, null]);
 
-  // Modal untuk konfirmasi hapus produk
+  // State untuk modal delete
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null); // 👉 Tambah ini
 
-  // Ambil produk seller
   const fetchSellerProduct = async () => {
     try {
       const token = await getToken();
@@ -40,7 +40,6 @@ const ProductList = () => {
     if (user) fetchSellerProduct();
   }, [user]);
 
-  // Handle edit & upload FormData ke API
   const handleEditProduct = async () => {
     if (!selectedProduct) return;
     setEditLoading(true);
@@ -53,7 +52,6 @@ const ProductList = () => {
       form.append("price", selectedProduct.price);
       form.append("offerPrice", selectedProduct.offerPrice);
 
-      // Lampirkan file jika ada
       files.forEach((f) => {
         if (f) form.append("images", f);
       });
@@ -86,7 +84,6 @@ const ProductList = () => {
     }
   };
 
-  // Handle delete product
   const handleDeleteProduct = async (id) => {
     try {
       const token = await getToken();
@@ -98,6 +95,7 @@ const ProductList = () => {
         toast.success("Product deleted successfully");
         fetchSellerProduct();
         setIsDeleteModalOpen(false);
+        setProductToDelete(null);
       } else {
         toast.error(data.message || "Failed to delete product");
       }
@@ -154,10 +152,9 @@ const ProductList = () => {
                           <span className="hidden md:block">Visit</span>
                           <Image className="h-3.5" src={assets.redirect_icon} alt="redirect_icon" />
                         </button>
-                        {/* Delete Button */}
                         <button
                           onClick={() => {
-                            setSelectedProduct(product);
+                            setProductToDelete(product);
                             setIsDeleteModalOpen(true);
                           }}
                           className="flex items-center gap-1 px-2 md:px-3.5 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs md:text-sm"
@@ -173,13 +170,13 @@ const ProductList = () => {
           </div>
         </div>
       )}
-            {/* Modal Edit */}
-            {selectedProduct && (
+
+      {/* Modal Edit */}
+      {selectedProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg">
             <h3 className="text-xl font-semibold text-green-600 mb-4">Edit Product</h3>
             <div className="space-y-4">
-              {/* Name */}
               <div>
                 <label className="block text-sm font-medium">Product Name</label>
                 <input
@@ -190,7 +187,6 @@ const ProductList = () => {
                   }
                 />
               </div>
-              {/* Description */}
               <div>
                 <label className="block text-sm font-medium">Description</label>
                 <textarea
@@ -202,7 +198,6 @@ const ProductList = () => {
                   }
                 />
               </div>
-              {/* Category */}
               <div>
                 <label className="block text-sm font-medium">Category</label>
                 <select
@@ -218,7 +213,6 @@ const ProductList = () => {
                   <option value="Sleeping Equipment">Sleeping Equipment</option>
                 </select>
               </div>
-              {/* Price */}
               <div>
                 <label className="block text-sm font-medium">Price</label>
                 <input
@@ -230,7 +224,6 @@ const ProductList = () => {
                   }
                 />
               </div>
-              {/* Offer Price */}
               <div>
                 <label className="block text-sm font-medium">Offer Price</label>
                 <input
@@ -242,7 +235,6 @@ const ProductList = () => {
                   }
                 />
               </div>
-              {/* Images */}
               <div>
                 <p className="font-medium">Product Images (max 4)</p>
                 <div className="flex flex-wrap gap-3 mt-2">
@@ -273,7 +265,6 @@ const ProductList = () => {
                   ))}
                 </div>
               </div>
-              {/* Actions */}
               <div className="flex justify-end gap-3 mt-4">
                 <button
                   onClick={() => setSelectedProduct(null)}
@@ -294,21 +285,24 @@ const ProductList = () => {
         </div>
       )}
 
-      {/* Modal Delete Confirmation */}
-      {isDeleteModalOpen && selectedProduct && (
+      {/* Modal Delete */}
+      {isDeleteModalOpen && productToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-md shadow-lg w-11/12 md:w-1/2 max-w-xl">
             <h3 className="text-lg font-semibold text-red-600 mb-4">Konfirmasi Hapus Produk</h3>
             <p>Apakah Anda yakin ingin menghapus produk ini?</p>
             <div className="flex justify-end gap-3 mt-4">
               <button
-                onClick={() => setIsDeleteModalOpen(false)}
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setProductToDelete(null);
+                }}
                 className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md"
               >
                 Batal
               </button>
               <button
-                onClick={() => handleDeleteProduct(selectedProduct._id)}
+                onClick={() => handleDeleteProduct(productToDelete._id)}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
               >
                 Hapus
@@ -317,7 +311,6 @@ const ProductList = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

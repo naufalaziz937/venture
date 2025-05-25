@@ -40,6 +40,19 @@ export const AppContextProvider = (props) => {
         }
     }
 
+    const searchProducts = async (query) => {
+        try {
+            const { data } = await axios.get(`/api/product/search?q=${query}`);
+            if (data.success) {
+                setProducts(data.products);
+            } else {
+                toast.error(data.message);
+            }
+        } catch (error) {
+            toast.error(error.message);
+        }
+    }
+
     const fetchUserData = async () => {
         try {
             if (user.publicMetadata.role === 'seller') {
@@ -142,7 +155,8 @@ export const AppContextProvider = (props) => {
         products, fetchProductData,
         cartItems, setCartItems,
         addToCart, updateCartQuantity,
-        getCartCount, getCartAmount
+        getCartCount, getCartAmount,
+        searchProducts // ✅ Tambahan: search dari API
     }
 
     return (

@@ -13,6 +13,7 @@ import user from './user.svg'
 import report from './report.svg'
 import voucher from './voucher.svg'
 import tax from'./tax.svg'
+import logo2 from './logo2.png'
 import stripe_logo from './stripe.png'
 import search_icon from "./search_icon.svg";
 import user_icon from "./user_icon.svg";
@@ -76,6 +77,7 @@ export const assets = {
   tax,
   stripe_logo,
   search_icon,
+  logo2,
   user_icon,
   cart_icon,
   add_icon,

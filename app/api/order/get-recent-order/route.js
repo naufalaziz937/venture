@@ -4,24 +4,28 @@ import Order from "@/models/order";
 import User from "@/models/user";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req) {
     try {
         await connectDB();
 
-        // Ambil 10 order terbaru, populate nama user 
+        const { searchParams } = new URL(req.url);
+        const page = parseInt(searchParams.get("page") || "1");
+        const limit = parseInt(searchParams.get("limit") || "5");
+        const skip = (page - 1) * limit;
+
         const orders = await Order.find()
             .sort({ date: -1 })
-            .limit(10)
+            .skip(skip)
+            .limit(limit)
             .populate("userId", "name")
             .lean();
 
-        // Sertakan status di payload
         const recentOrders = orders.map(o => ({
             id: o._id.toString(),
             name: o.userId?.name || "—",
             amount: o.amount,
             date: o.date,
-            status: o.status,             // <— tambahkan status
+            status: o.status,
         }));
 
         return NextResponse.json({ success: true, recentOrders });
