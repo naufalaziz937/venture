@@ -2,10 +2,13 @@
 import connectDB from "@/config/db";
 import Order from "@/models/order";
 import User from "@/models/user";
+import { requireSeller } from "@/lib/requireSeller";
 import { NextResponse } from "next/server";
 
 export async function GET(req) {
     try {
+        const { response } = await requireSeller(req);
+        if (response) return response;
         await connectDB();
 
         const { searchParams } = new URL(req.url);

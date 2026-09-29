@@ -1,10 +1,13 @@
 import connectDB from "@/config/db";
 import User from "@/models/user";
+import { requireSeller } from "@/lib/requireSeller";
 import { NextResponse } from "next/server";
 import { subMonths, format } from 'date-fns';
 
-export async function GET() {
+export async function GET(request) {
     try {
+        const { response } = await requireSeller(request);
+        if (response) return response;
         await connectDB();
 
         // Get user growth for last 6 months

@@ -2,6 +2,7 @@ import connectDB from "@/config/db";
 import Address from "@/models/address";
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { ensureMongoUser } from "@/lib/syncClerkUser";
 
 export async function GET(request) {
     try {
@@ -13,7 +14,8 @@ export async function GET(request) {
         }
 
         await connectDB();
-        const addresses = await Address.find({ userId });
+        const user = await ensureMongoUser(userId);
+        const addresses = await Address.find({ userId: user._id });
 
         return NextResponse.json({ success: true, addresses }, { status: 200 });
 

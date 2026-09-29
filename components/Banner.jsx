@@ -29,7 +29,7 @@ const Banner = () => {
           />
         </button>
       </div>
-      <Image className="hidden md:block max-w-80" src={assets.jaket1} alt="jaket1" />
+      <Image className="hidden lg:block max-w-80" src={assets.jaket1} alt="jaket1" />
     </div>
   );
 };

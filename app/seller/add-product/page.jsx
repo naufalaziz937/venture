@@ -16,6 +16,8 @@ const AddProduct = () => {
   const [category, setCategory] = useState('');
   const [price, setPrice] = useState('');
   const [offerPrice, setOfferPrice] = useState('');
+  const [stock, setStock] = useState('1');
+  const [depositAmount, setDepositAmount] = useState('0');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,6 +28,8 @@ const AddProduct = () => {
     formData.append('category', category);
     formData.append('price', price);
     formData.append('offerPrice', offerPrice);
+    formData.append('stock', stock);
+    formData.append('depositAmount', depositAmount);
 
     for (let i = 0; i < files.length; i++) {
       formData.append('images', files[i]); // Pastikan key "images" sesuai dengan di backend
@@ -46,6 +50,8 @@ const AddProduct = () => {
         setCategory('');
         setPrice('');
         setOfferPrice('');
+        setStock('1');
+        setDepositAmount('0');
       } else {
         toast.error(data.message);
       }
@@ -141,6 +147,23 @@ const AddProduct = () => {
               className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
               onChange={(e) => setPrice(e.target.value)}
               value={price}
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-1 w-32">
+            <label className="text-base font-medium" htmlFor="deposit-amount">Deposit</label>
+            <input id="deposit-amount" type="number" min="0" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40" required />
+          </div>
+          <div className="flex flex-col gap-1 w-32">
+            <label className="text-base font-medium" htmlFor="product-stock">Rental Stock</label>
+            <input
+              id="product-stock"
+              type="number"
+              min="0"
+              step="1"
+              className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
+              onChange={(e) => setStock(e.target.value)}
+              value={stock}
               required
             />
           </div>

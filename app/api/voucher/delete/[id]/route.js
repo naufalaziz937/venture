@@ -1,11 +1,14 @@
 // app/api/voucher/delete/[id]/route.js
 import connectDB from "@/config/db";
 import Voucher from "@/models/voucher";
+import { requireSeller } from "@/lib/requireSeller";
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 
 export async function DELETE(request, { params }) {
-    const { id } = params;
+    const { response } = await requireSeller(request);
+    if (response) return response;
+    const { id } = await params;
 
     // Validasi ID voucher
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {

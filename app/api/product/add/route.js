@@ -1,10 +1,10 @@
 import connectDB from "@/config/db";
 import mongoose from "mongoose"; // ✅ Tambahkan ini
-import authSeller from "@/lib/authSeller";
+import { requireSeller } from "@/lib/requireSeller";
 import Product from "@/models/product";
-import { getAuth } from "@clerk/nextjs/server";
 import { v2 as cloudinary } from "cloudinary";
 import { NextResponse } from "next/server";
+import { validateImageFiles } from "@/lib/uploads.mjs";
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -14,14 +14,9 @@ cloudinary.config({
 
 export async function POST(request) {
     try {
+        const { userId, response } = await requireSeller(request);
+        if (response) return response;
         await connectDB();
-
-        const { userId } = getAuth(request);
-        const isSeller = await authSeller(userId);
-        
-        if (!isSeller) {
-            return NextResponse.json({ success: false, message: 'Not authorized' }, { status: 403 });
-        }
 
         const formData = await request.formData();
         console.log("Form Data Received:", formData);
@@ -31,10 +26,14 @@ export async function POST(request) {
         const category = formData.get('category');
         const price = formData.get('price');
         const offerPrice = formData.get('offerPrice');
+        const stock = Number(formData.get('stock'));
+        const depositAmount = Number(formData.get('depositAmount'));
         const files = formData.getAll('images');
 
-        if (!files || files.length === 0) {
-            return NextResponse.json({ success: false, message: 'No files uploaded' }, { status: 400 });
+        const fileError = validateImageFiles(files);
+        if (fileError) return NextResponse.json({ success: false, message: fileError }, { status: 400 });
+        if (!name || !description || !category || !Number.isFinite(Number(price)) || Number(price) <= 0 || !Number.isFinite(Number(offerPrice)) || Number(offerPrice) <= 0 || !Number.isInteger(stock) || stock < 0 || !Number.isFinite(depositAmount) || depositAmount < 0) {
+            return NextResponse.json({ success: false, message: 'Invalid product fields' }, { status: 400 });
         }
 
         // Upload ke Cloudinary
@@ -45,7 +44,7 @@ export async function POST(request) {
 
                 return new Promise((resolve, reject) => {
                     const stream = cloudinary.uploader.upload_stream(
-                        { resource_type: 'auto' },
+                        { resource_type: 'image' },
                         (error, result) => {
                             if (error) {
                                 reject(error);
@@ -68,6 +67,8 @@ export async function POST(request) {
             category,
             price: Number(price),
             offerPrice: Number(offerPrice),
+            stock,
+            depositAmount,
             image: images,
             date: Date.now()
         });

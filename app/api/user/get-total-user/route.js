@@ -1,10 +1,13 @@
 // app/api/user/get-total-user/route.js
 import connectDB from "@/config/db";
 import User from "@/models/user";
+import { requireSeller } from "@/lib/requireSeller";
 import { NextResponse } from "next/server";
 
 export async function GET(request) {
     try {
+        const { response } = await requireSeller(request);
+        if (response) return response;
         await connectDB();
         // Hitung total user
         const totalUsers = await User.countDocuments();

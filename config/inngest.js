@@ -2,6 +2,7 @@ import { Inngest } from "inngest";
 import connectDB from "./db";
 import User from "@/models/user";
 import Order from "@/models/order";
+import { upsertClerkUser } from "@/lib/syncClerkUser";
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "venture-next" });
@@ -14,15 +15,8 @@ export const syncUserCreation = inngest.createFunction(
     },
     { event: 'clerk/user.created' },
     async ({ event }) => {
-        const { id, first_name, last_name, email_addresses, image_url } = event.data
-        const userData = {
-            _id: id,
-            email: email_addresses[0].email_address,
-            name: first_name + ' ' + last_name,
-            imageUrl: image_url
-        }
         await connectDB()
-        await User.create(userData)
+        await upsertClerkUser(event.data)
     }
 )
 
@@ -33,15 +27,8 @@ export const syncUserUpdation = inngest.createFunction(
     },
     { event: 'clerk/user.update' },
     async ({ event }) => {
-        const { id, first_name, last_name, email_addresses, image_url } = event.data
-        const userData = {
-            _id: id,
-            email: email_addresses[0].email_address,
-            name: first_name + ' ' + last_name,
-            imageUrl: image_url
-        }
         await connectDB()
-        await User.findByIdAndUpdate(id, userData)
+        await upsertClerkUser(event.data)
     }
 )
 
@@ -70,33 +57,9 @@ export const createUserOrder = inngest.createFunction(
     },
     { event: 'order/created' },
     async ({ events }) => {
-        const orders = events.map(async (event) => {
-            const { userId, items, amount, address, date, voucherCode, discountAmount } = event.data;
-
-            // Menyimpan informasi voucher di order jika ada
-            const orderData = {
-                userId,
-                items,
-                amount,
-                address,
-                date,
-                voucherCode: voucherCode || null,  // Simpan voucher code jika ada
-                discountAmount: discountAmount || 0,  // Simpan discountAmount jika ada
-            };
-
-            // Return order data untuk disimpan di database
-            return orderData;
-        });
-
-        // Tunggu hingga semua data order selesai diproses
-        const orderDataArray = await Promise.all(orders);
-
-        // Koneksi ke database
         await connectDB();
-
-        // Insert orders into database
-        await Order.insertMany(orderDataArray);
-
-        return { success: true, processed: orderDataArray.length };
+        const orderIds = [...new Set(events.map(event => event.data.orderId).filter(Boolean))];
+        const existingOrders = await Order.countDocuments({ _id: { $in: orderIds } });
+        return { success: true, processed: orderIds.length, existingOrders };
     }
 )

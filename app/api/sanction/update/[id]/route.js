@@ -1,9 +1,12 @@
 import connectDB from '@/config/db';
 import Sanction from '@/models/sanction';
+import { requireSeller } from '@/lib/requireSeller';
 import { NextResponse } from 'next/server';
 
 export async function PUT(req, { params }) {
     try {
+        const { response } = await requireSeller(req);
+        if (response) return response;
         await connectDB();
         const { userId, reason, status, expiresAt } = await req.json();
         const update = {}; // <--- di sini hapus ': any'
@@ -13,7 +16,8 @@ export async function PUT(req, { params }) {
         if (status) update.status = status;
         if (expiresAt !== undefined) update.expiresAt = expiresAt ? new Date(expiresAt) : null;
 
-        const updated = await Sanction.findByIdAndUpdate(params.id, update, { new: true });
+        const { id } = await params;
+        const updated = await Sanction.findByIdAndUpdate(id, update, { new: true, runValidators: true });
         if (!updated) {
             return NextResponse.json(
                 { success: false, message: 'Not found' },

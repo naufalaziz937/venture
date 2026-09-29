@@ -1,11 +1,15 @@
 import connectDB from '@/config/db';
 import Sanction from '@/models/sanction';
+import { requireSeller } from '@/lib/requireSeller';
 import { NextResponse } from 'next/server';
 
 export async function DELETE(req, { params }) {
     try {
+        const { response } = await requireSeller(req);
+        if (response) return response;
         await connectDB();
-        const deleted = await Sanction.findByIdAndDelete(params.id);
+        const { id } = await params;
+        const deleted = await Sanction.findByIdAndDelete(id);
         if (!deleted) {
             return NextResponse.json(
                 { success: false, message: 'Not found' },

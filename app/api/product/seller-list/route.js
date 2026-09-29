@@ -1,17 +1,13 @@
 import connectDB from "@/config/db";
-import authSeller from "@/lib/authSeller";
+import { requireSeller } from "@/lib/requireSeller";
 import Product from "@/models/product";
-import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 
 export async function GET(request) {
     try {
-        const {userId} = getAuth(request)
-        const isSeller = authSeller(userId)
-        if (!isSeller) {
-            return NextResponse.json({success: false, message: 'not authorized'});
-        }
+        const { response } = await requireSeller(request);
+        if (response) return response;
         await connectDB()
         const product = await Product.find({})
         return NextResponse.json({success: true, product})

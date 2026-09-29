@@ -51,6 +51,8 @@ const ProductList = () => {
       form.append("category", selectedProduct.category);
       form.append("price", selectedProduct.price);
       form.append("offerPrice", selectedProduct.offerPrice);
+      form.append("stock", selectedProduct.stock || 1);
+      form.append('depositAmount', selectedProduct.depositAmount || 0);
 
       files.forEach((f) => {
         if (f) form.append("images", f);
@@ -116,7 +118,7 @@ const ProductList = () => {
                 <tr>
                   <th className="w-2/3 md:w-2/5 px-4 py-3 font-medium truncate">Product</th>
                   <th className="px-4 py-3 font-medium truncate max-sm:hidden">Category</th>
-                  <th className="px-4 py-3 font-medium truncate">Price</th>
+                  <th className="px-4 py-3 font-medium truncate">Price / Stock</th>
                   <th className="px-4 py-3 font-medium truncate max-sm:hidden">Action</th>
                 </tr>
               </thead>
@@ -136,7 +138,7 @@ const ProductList = () => {
                       <span className="truncate w-full">{product.name}</span>
                     </td>
                     <td className="px-4 py-3 max-sm:hidden">{product.category}</td>
-                    <td className="px-4 py-3">Rp.{product.offerPrice}</td>
+                    <td className="px-4 py-3">Rp.{product.offerPrice} / {product.stock || 1}</td>
                     <td className="px-4 py-3 max-sm:hidden">
                       <div className="flex gap-2">
                         <button
@@ -234,6 +236,21 @@ const ProductList = () => {
                     setSelectedProduct({ ...selectedProduct, offerPrice: e.target.value })
                   }
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Rental Stock</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  className="w-full p-2 border rounded"
+                  value={selectedProduct.stock || 1}
+                  onChange={(e) => setSelectedProduct({ ...selectedProduct, stock: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Security Deposit</label>
+                <input type="number" min="0" className="w-full p-2 border rounded" value={selectedProduct.depositAmount || 0} onChange={(e) => setSelectedProduct({ ...selectedProduct, depositAmount: e.target.value })} />
               </div>
               <div>
                 <p className="font-medium">Product Images (max 4)</p>

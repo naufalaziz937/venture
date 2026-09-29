@@ -2,6 +2,7 @@
 import connectDB from "@/config/db";
 import Voucher from "@/models/voucher";
 import { NextResponse } from "next/server";
+import { isVoucherUsable } from "@/lib/checkout.mjs";
 
 export async function GET(req) {
     try {
@@ -14,6 +15,9 @@ export async function GET(req) {
         const voucher = await Voucher.findOne({ code });
         if (!voucher) {
             return NextResponse.json({ success: false, message: "Voucher tidak valid" }, { status: 404 });
+        }
+        if (!isVoucherUsable(voucher)) {
+            return NextResponse.json({ success: false, message: "Voucher kedaluwarsa atau batas penggunaan tercapai" }, { status: 400 });
         }
         // Jangan hitung diskon di sini, cukup kirim type & amount
         return NextResponse.json({

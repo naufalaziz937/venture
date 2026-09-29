@@ -3,7 +3,7 @@ import { assets } from "@/assets/assets";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 const OrderSummary = () => {
@@ -14,7 +14,11 @@ const OrderSummary = () => {
     getToken,
     user,
     cartItems,
-    setCartItems
+    setCartItems,
+    rentalStartDate,
+    rentalEndDate,
+    updateRentalPeriod,
+    products,
   } = useAppContext();
 
   // Alamat
@@ -28,6 +32,53 @@ const OrderSummary = () => {
   const [promoCode, setPromoCode] = useState("");
   const [voucherCode, setVoucherCode] = useState(null);
   const [discountAmount, setDiscountAmount] = useState(0);
+  const localDate = new Date();
+  const today = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+  const [availability, setAvailability] = useState(null);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const checkoutKeyRef = useRef(null);
+  const getCheckoutKey = () => {
+    if (!checkoutKeyRef.current) checkoutKeyRef.current = crypto.randomUUID().replaceAll('-', '_');
+    return checkoutKeyRef.current;
+  };
+
+  useEffect(() => {
+    checkoutKeyRef.current = null;
+  }, [cartItems, rentalStartDate, rentalEndDate]);
+
+  const durationDays = rentalStartDate && rentalEndDate && rentalEndDate >= rentalStartDate
+    ? Math.round((new Date(`${rentalEndDate}T00:00:00Z`) - new Date(`${rentalStartDate}T00:00:00Z`)) / 86400000) + 1
+    : 0;
+
+  useEffect(() => {
+    const items = Object.entries(cartItems)
+      .map(([product, quantity]) => ({ product, quantity }))
+      .filter(item => Number.isInteger(item.quantity) && item.quantity > 0);
+    if (!durationDays || items.length === 0) {
+      setAvailability(null);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setCheckingAvailability(true);
+      try {
+        const { data } = await axios.post('/api/product/availability', {
+          items, rentalStartDate, rentalEndDate,
+        }, { signal: controller.signal });
+        setAvailability(data);
+      } catch (error) {
+        if (error.code !== 'ERR_CANCELED') {
+          setAvailability({ available: false, message: error.response?.data?.message || 'Unable to check availability' });
+        }
+      } finally {
+        setCheckingAvailability(false);
+      }
+    }, 250);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [cartItems, rentalStartDate, rentalEndDate, durationDays]);
 
   // Load alamat user
   useEffect(() => {
@@ -69,7 +120,7 @@ const OrderSummary = () => {
         return;
       }
       const v = data.voucher;
-      const subtotal = getCartAmount();
+      const subtotal = getCartAmount() * durationDays;
       let discount = 0;
       if (v.type === "fixed") {
         discount = v.amount;
@@ -87,9 +138,13 @@ const OrderSummary = () => {
   };
 
   // dan di render:
-  const subtotal = getCartAmount();
+  const subtotal = getCartAmount() * durationDays;
+  const depositAmount = Object.entries(cartItems).reduce((totalDeposit, [productId, quantity]) => {
+    const product = products.find(item => item._id === productId);
+    return totalDeposit + Number(product?.depositAmount || 0) * quantity;
+  }, 0);
   const tax = Math.floor(subtotal * 0.12);
-  const total = subtotal + tax - discountAmount;
+  const total = subtotal + tax - discountAmount + depositAmount;
 
 
   // Buat order
@@ -97,6 +152,10 @@ const OrderSummary = () => {
     try {
       if (!selectedAddress) {
         toast.error("Pilih alamat terlebih dahulu");
+        return;
+      }
+      if (!availability?.available) {
+        toast.error('Selected products are not available for these dates');
         return;
       }
       // Prepare items
@@ -123,13 +182,16 @@ const OrderSummary = () => {
           items,
           voucherCode,
           discountAmount,
+          rentalStartDate,
+          rentalEndDate,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}`, 'Idempotency-Key': getCheckoutKey() } }
       );
 
       if (data.success) {
         toast.success(data.message);
         setCartItems({});
+        checkoutKeyRef.current = null;
         router.push("/order-placed");
       } else {
         toast.error(data.message);
@@ -145,6 +207,10 @@ const OrderSummary = () => {
 
       if (!selectedAddress) {
         toast.error("Pilih alamat terlebih dahulu");
+        return;
+      }
+      if (!availability?.available) {
+        toast.error('Selected products are not available for these dates');
         return;
       }
       // Prepare items
@@ -171,8 +237,10 @@ const OrderSummary = () => {
           items,
           voucherCode,
           discountAmount,
+          rentalStartDate,
+          rentalEndDate,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}`, 'Idempotency-Key': getCheckoutKey() } }
       );
 
       if (data.success) {
@@ -190,6 +258,54 @@ const OrderSummary = () => {
     <div className="w-full md:w-96 bg-gray-50 p-5">
       <h2 className="text-2xl font-medium text-gray-700">Order Summary</h2>
       <hr className="my-5 border-gray-300" />
+
+      <div className="mb-6">
+        <p className="block text-sm font-medium text-gray-600 mb-2">Rental period</p>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="text-xs text-gray-500">
+            Start date
+            <input
+              type="date"
+              min={today}
+              value={rentalStartDate}
+              onChange={(e) => {
+                const nextEndDate = rentalEndDate < e.target.value ? e.target.value : rentalEndDate;
+                updateRentalPeriod(e.target.value, nextEndDate);
+                setVoucherCode(null);
+                setDiscountAmount(0);
+              }}
+              className="mt-1 w-full p-2 border rounded text-sm"
+            />
+          </label>
+          <label className="text-xs text-gray-500">
+            End date
+            <input
+              type="date"
+              min={rentalStartDate || today}
+              value={rentalEndDate}
+              onChange={(e) => {
+                updateRentalPeriod(rentalStartDate, e.target.value);
+                setVoucherCode(null);
+                setDiscountAmount(0);
+              }}
+              className="mt-1 w-full p-2 border rounded text-sm"
+            />
+          </label>
+        </div>
+        <p className="mt-2 text-sm text-gray-600">{durationDays || 0} rental day{durationDays === 1 ? '' : 's'}</p>
+        {checkingAvailability ? (
+          <p className="mt-1 text-sm text-gray-500">Checking availability...</p>
+        ) : availability?.available ? (
+          <p className="mt-1 text-sm text-green-600">All items are available.</p>
+        ) : availability ? (
+          <div className="mt-1 text-sm text-red-600">
+            <p>{availability.message || 'Some items are unavailable.'}</p>
+            {availability.availability?.filter(item => !item.available).map(item => (
+              <p key={item.product}>{item.name}: {item.availableQuantity} available, {item.requestedQuantity} requested</p>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       {/* Alamat */}
       <div className="mb-6">
@@ -266,13 +382,19 @@ const OrderSummary = () => {
       {/* Breakdown */}
       <div className="space-y-4">
         <div className="flex justify-between">
-          <span className="text-gray-600">Subtotal ({getCartCount()} items)</span>
+          <span className="text-gray-600">Subtotal ({getCartCount()} items × {durationDays || 0} days)</span>
           <span className="font-medium">Rp.{subtotal.toLocaleString()}</span>
         </div>
         {discountAmount > 0 && (
           <div className="flex justify-between text-green-600">
             <span>Discount</span>
             <span>- Rp.{discountAmount.toLocaleString()}</span>
+          </div>
+        )}
+        {depositAmount > 0 && (
+          <div className="flex justify-between text-blue-700">
+            <span>Refundable security deposit</span>
+            <span>Rp.{depositAmount.toLocaleString()}</span>
           </div>
         )}
         <div className="flex justify-between">
@@ -290,7 +412,8 @@ const OrderSummary = () => {
         !isPlacedOrderClicked ? (
           <button
             onClick={() => setIsPlacedOrderClicked(true)}
-            className="w-full mt-5 py-3 bg-green-600 text-white rounded hover:bg-green-700"
+            disabled={checkingAvailability || !availability?.available}
+            className="w-full mt-5 py-3 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Place Order
           </button>

@@ -3,26 +3,31 @@ import ProductCard from "@/components/ProductCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
-const AllProducts = () => {
+const AllProductsContent = () => {
     const searchParams = useSearchParams();
     const query = searchParams.get("q")?.toLowerCase() || "";
 
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchProducts = async () => {
             try {
                 setLoading(true);
+                setError(null);
                 const res = await fetch(`/api/product/search?q=${query}`);
                 const data = await res.json();
                 if (data.success) {
                     setProducts(data.products);
+                } else {
+                    setError(data.message || 'Unable to load products');
                 }
             } catch (err) {
                 console.error("Failed to fetch products", err);
+                setError('Unable to load products');
             } finally {
                 setLoading(false);
             }
@@ -44,6 +49,8 @@ const AllProducts = () => {
 
                 {loading ? (
                     <p className="mt-12 pb-14 text-gray-500">Loading...</p>
+                ) : error ? (
+                    <p className="mt-12 pb-14 text-gray-500">{error}</p>
                 ) : products.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mt-12 pb-14 w-full">
                         {products.map((product, index) => (
@@ -59,4 +66,10 @@ const AllProducts = () => {
     );
 };
 
-export default AllProducts;
+export default function AllProducts() {
+    return (
+        <Suspense fallback={<p className="px-6 md:px-16 lg:px-32 pt-12 text-gray-500">Loading...</p>}>
+            <AllProductsContent />
+        </Suspense>
+    );
+}

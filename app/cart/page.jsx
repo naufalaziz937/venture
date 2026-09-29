@@ -32,10 +32,10 @@ const Cart = () => {
                     Price
                   </th>
                   <th className="pb-6 md:px-4 px-1 text-gray-600 font-medium">
-                    Day
+                    Quantity
                   </th>
                   <th className="pb-6 md:px-4 px-1 text-gray-600 font-medium">
-                    Subtotal
+                    Daily subtotal
                   </th>
                 </tr>
               </thead>

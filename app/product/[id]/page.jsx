@@ -14,19 +14,79 @@ const Product = () => {
 
     const { id } = useParams();
 
-    const { products, router, addToCart } = useAppContext()
+    const {
+        products,
+        productsLoaded,
+        router,
+        addToCart,
+        rentalStartDate,
+        rentalEndDate,
+        updateRentalPeriod,
+    } = useAppContext()
 
     const [mainImage, setMainImage] = useState(null);
     const [productData, setProductData] = useState(null);
+    const [hasResolvedProduct, setHasResolvedProduct] = useState(false);
+    const [availability, setAvailability] = useState(null);
+    const [checkingAvailability, setCheckingAvailability] = useState(false);
+    const localDate = new Date();
+    const today = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+    const durationDays = rentalStartDate && rentalEndDate && rentalEndDate >= rentalStartDate
+        ? Math.round((new Date(`${rentalEndDate}T00:00:00Z`) - new Date(`${rentalStartDate}T00:00:00Z`)) / 86400000) + 1
+        : 0;
 
     const fetchProductData = async () => {
         const product = products.find(product => product._id === id);
-        setProductData(product);
+        setProductData(product || null);
+        setHasResolvedProduct(productsLoaded);
     }
 
     useEffect(() => {
         fetchProductData();
-    }, [id, products.length])
+    }, [id, products, productsLoaded])
+
+    useEffect(() => {
+        if (!productData || !durationDays) return;
+        const controller = new AbortController();
+        const timer = setTimeout(async () => {
+            setCheckingAvailability(true);
+            try {
+                const response = await fetch('/api/product/availability', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        items: [{ product: productData._id, quantity: 1 }],
+                        rentalStartDate,
+                        rentalEndDate,
+                    }),
+                    signal: controller.signal,
+                });
+                const data = await response.json();
+                setAvailability(response.ok ? data : { available: false, message: data.message });
+            } catch (error) {
+                if (error.name !== 'AbortError') setAvailability({ available: false, message: 'Unable to check availability' });
+            } finally {
+                setCheckingAvailability(false);
+            }
+        }, 250);
+        return () => {
+            clearTimeout(timer);
+            controller.abort();
+        };
+    }, [productData, rentalStartDate, rentalEndDate, durationDays]);
+
+    if (!hasResolvedProduct) return <Loading />;
+    if (!productData) return (
+        <>
+            <Navbar />
+            <main className="min-h-[60vh] flex flex-col items-center justify-center px-6 text-center">
+                <h1 className="text-2xl font-medium text-gray-800">Product not found</h1>
+                <p className="mt-2 text-gray-500">The product may have been removed or is unavailable.</p>
+                <button onClick={() => router.push('/all-products')} className="mt-6 px-6 py-2 bg-green-600 text-white rounded">View products</button>
+            </main>
+            <Footer />
+        </>
+    );
 
     return productData ? (<>
         <Navbar />
@@ -90,7 +150,49 @@ const Product = () => {
                             Rp.{productData.price}  /day
                         </span>
                     </p>
+                    {productData.depositAmount > 0 && (
+                        <p className="mt-2 text-sm text-blue-700">Refundable security deposit: Rp.{productData.depositAmount.toLocaleString('id-ID')} per unit</p>
+                    )}
                     <hr className="bg-gray-600 my-6" />
+                    <div className="rounded-lg border border-gray-200 p-4">
+                        <p className="font-medium text-gray-800">Choose rental dates</p>
+                        <div className="grid grid-cols-2 gap-3 mt-3">
+                            <label className="text-xs text-gray-500">
+                                Start date
+                                <input
+                                    type="date"
+                                    min={today}
+                                    value={rentalStartDate}
+                                    onChange={(e) => updateRentalPeriod(
+                                        e.target.value,
+                                        rentalEndDate < e.target.value ? e.target.value : rentalEndDate
+                                    )}
+                                    className="mt-1 w-full rounded border p-2 text-sm"
+                                />
+                            </label>
+                            <label className="text-xs text-gray-500">
+                                End date
+                                <input
+                                    type="date"
+                                    min={rentalStartDate || today}
+                                    value={rentalEndDate}
+                                    onChange={(e) => updateRentalPeriod(rentalStartDate, e.target.value)}
+                                    className="mt-1 w-full rounded border p-2 text-sm"
+                                />
+                            </label>
+                        </div>
+                        <p className="mt-3 text-sm text-gray-600">
+                            {durationDays} day{durationDays === 1 ? '' : 's'} · Rp.{(productData.offerPrice * durationDays).toLocaleString('id-ID')} per unit
+                        </p>
+                        {checkingAvailability ? (
+                            <p className="mt-1 text-sm text-gray-500">Checking availability...</p>
+                        ) : availability?.available ? (
+                            <p className="mt-1 text-sm text-green-600">{availability.availability?.[0]?.availableQuantity} available for these dates.</p>
+                        ) : availability ? (
+                            <p className="mt-1 text-sm text-red-600">{availability.message || 'Unavailable for these dates.'}</p>
+                        ) : null}
+                        <p className="mt-1 text-xs text-gray-400">This rental period applies to every item in your cart.</p>
+                    </div>
                     <div className="overflow-x-auto">
                         <table className="table-auto border-collapse w-full max-w-72">
                             <tbody>
@@ -113,10 +215,21 @@ const Product = () => {
                     </div>
 
                     <div className="flex items-center mt-10 gap-4">
-                        <button onClick={() => addToCart(productData._id)} className="w-full py-3.5 bg-gray-100 text-gray-800/80 hover:bg-gray-200 transition">
+                        <button
+                            disabled={checkingAvailability || !availability?.available}
+                            onClick={() => addToCart(productData._id, { rentalStartDate, rentalEndDate })}
+                            className="w-full py-3.5 bg-gray-100 text-gray-800/80 hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                             Add to Cart
                         </button>
-                        <button onClick={() => { addToCart(productData._id); router.push('/cart') }} className="w-full py-3.5 bg-green-500 text-white hover:bg-green-600 transition">
+                        <button
+                            disabled={checkingAvailability || !availability?.available}
+                            onClick={async () => {
+                                await addToCart(productData._id, { rentalStartDate, rentalEndDate });
+                                router.push('/cart');
+                            }}
+                            className="w-full py-3.5 bg-green-500 text-white hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                             Rent now
                         </button>
                     </div>
@@ -137,7 +250,7 @@ const Product = () => {
         </div>
         <Footer />
     </>
-    ) : <Loading />
+    ) : null
 };
 
 export default Product;

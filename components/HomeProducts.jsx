@@ -4,11 +4,14 @@ import { useAppContext } from "@/context/AppContext";
 
 const HomeProducts = () => {
 
-  const { products, router } = useAppContext()
+  const { products, productsLoaded, productError, router } = useAppContext()
 
   return (
     <div className="flex flex-col items-center pt-14">
       <p className="text-2xl font-medium text-left w-full">Popular products</p>
+      {productsLoaded && productError && products.length === 0 && (
+        <p className="w-full mt-6 text-sm text-gray-500">Products are temporarily unavailable.</p>
+      )}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 flex-col items-center gap-6 mt-6 pb-14 w-full">
         {products.map((product, index) => <ProductCard key={index} product={product} />)}
       </div>

@@ -37,7 +37,7 @@ const Navbar = () => {
         />
 
         {/* Desktop Menu */}
-        <div className="hidden md:flex items-center gap-4 lg:gap-8">
+        <div className="hidden lg:flex items-center gap-4 lg:gap-8">
           <Link href="/" className="hover:text-gray-900 transition">
             Home
           </Link>
@@ -64,7 +64,7 @@ const Navbar = () => {
         </div>
 
         {/* Desktop Right Side */}
-        <ul className="hidden md:flex items-center gap-4">
+        <ul className="hidden lg:flex items-center gap-4">
           {/* Search Bar (Desktop only) */}
           <form onSubmit={handleSearchSubmit} className="relative">
             <input
@@ -112,7 +112,7 @@ const Navbar = () => {
         </ul>
 
         {/* Mobile Menu */}
-        <div className="flex items-center md:hidden gap-3">
+        <div className="flex items-center lg:hidden gap-3">
           {isSeller && (
             <button
               onClick={() => router.push("/seller")}
@@ -161,7 +161,7 @@ const Navbar = () => {
       {/* Search Bar (Mobile only) */}
       <form
         onSubmit={handleSearchSubmit}
-        className="flex md:hidden px-6 py-2 border-b border-gray-300"
+        className="flex lg:hidden px-6 py-2 border-b border-gray-300"
       >
         <input
           type="text"
