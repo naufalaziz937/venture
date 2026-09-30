@@ -16,7 +16,7 @@
     "chart.js": "^4.4.9",
     "cloudinary": "^2.6.0",
     "date-fns": "^4.1.0",
-    "inngest": "^3.32.7",
+    "inngest": "^3.54.0",
     "midtrans-client": "^1.4.2",
     "mongoose": "^8.12.1",
     "next": "^15.5.26",
@@ -31,8 +31,9 @@
     "@eslint/eslintrc": "^3",
     "@types/react": "19.0.10",
     "eslint": "^9",
-    "eslint-config-next": "15.1.6",
+    "eslint-config-next": "^15.5.26",
     "postcss": "^8",
-    "tailwindcss": "^3.4.1"
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.8.3"
   }
 }
