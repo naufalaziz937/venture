@@ -19,7 +19,7 @@
     "inngest": "^3.32.7",
     "midtrans-client": "^1.4.2",
     "mongoose": "^8.12.1",
-    "next": "^15.5.7",
+    "next": "^15.5.26",
     "react": "^19.0.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.0.0",
