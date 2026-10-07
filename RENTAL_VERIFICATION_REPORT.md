@@ -105,3 +105,21 @@ No new environment variables. Existing CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY
 
 Pre-existing changes to app/layout.js and public/venture-mountain-hero.png were left untouched.
 
+## Mobile upload lifecycle fix
+
+Root cause in the existing code: useVerification registered a window focus listener and set its initial loading flag to true on every status refresh. VerificationPage replaced the entire form subtree with a skeleton while that flag was true. Returning from a native gallery/camera picker can fire focus before the file input change event, removing the input that should receive the selected File. An already-captured File was held in parent state, but the remounted native input was empty and the UI did not show a persistent selected-file indicator.
+
+The current architecture uploads both images on final submit, not when selecting a file. Selection creates only a local blob preview; the submit API receives multipart Files, uploads each to authenticated Cloudinary, persists publicId/format internally and returns a PENDING summary. There is no upload-response URL field for the frontend to read. This contract remains unchanged.
+
+Fix: background status refresh no longer activates the initial-loading skeleton; focus refresh is suspended during editing; loading/errors never replace an active verification form. Focus requests are deduplicated, stale responses ignored and effects depend on user ID rather than the mutable user object. File capture is synchronous and the parent File/preview state survives step navigation and normal rerenders.
+
+Document/selfie track selected/uploading/success/error independently. Success is assigned only after the server confirms PENDING, because selection is not a storage upload. The UI shows selected-ready status and Replace Image before submission. Network errors retain Files and previews and expose an explicit Retry Upload action. Duplicate submits remain blocked by a synchronous ref. Unsupported MIME and files above 5 MB show explicit errors without clearing an earlier valid selection.
+
+Changed for this fix:
+- app/account/verification/page.jsx
+- components/VerificationStatus.jsx
+- tests/verification-mobile-upload.test.mjs (new)
+- tests/verification.test.mjs
+- RENTAL_VERIFICATION_REPORT.md
+
+Verification: npm test 45/45 PASS; npm run lint PASS (one existing unrelated image warning); npm run build PASS, 63 pages/routes. New tests execute actual JSX/hooks with a deterministic hook harness, simulate focus/loading, file selection, back/continue, normal rerenders, slow/failed network, duplicate submissions, same-file replacement and MIME/size errors. A real multipart Request test proves the submit handler receives Files and stores only mocked storage identifiers. Mobile camera/gallery interactions are simulated; no physical mobile device or live authenticated document upload was used in this fix. No backend, storage, identity schema, rental/payment/order implementation or upload limit was changed.

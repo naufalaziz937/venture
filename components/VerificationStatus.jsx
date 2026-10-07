@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import Link from 'next/link';
 import { useAppContext } from '@/context/AppContext';
@@ -7,28 +7,36 @@ export const statusLabels = { NOT_SUBMITTED: 'Not Verified', PENDING: 'Pending',
 export function VerificationBadge({ status }) {
     return <span className={'text-xs px-2 py-1 rounded-full ' + (status === 'VERIFIED' ? 'bg-green-100 text-green-700' : status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-800')}>{statusLabels[status] || 'Not Verified'}</span>;
 }
-export function useVerification() {
+export function useVerification({ refreshOnFocus = true } = {}) {
     const { user, getToken, isAuthLoaded } = useAppContext();
     const [verification, setVerification] = useState(null);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
+    const resolvedUser = useRef(null);
+    const requestVersion = useRef(0);
+    const userId = user?.id;
     useEffect(() => {
         let active = true;
+        let inFlight = false;
         const load = async () => {
-            if (!user) { if (active) { setVerification(null); setLoading(false); } return; }
-            setLoading(true);
+            if (inFlight || !isAuthLoaded) return;
+            if (!userId) { if (active) { resolvedUser.current = null; setVerification(null); setError(''); setLoading(false); } return; }
+            inFlight = true;
+            const version = ++requestVersion.current;
+            // Background refresh must not unmount an active file picker/form.
+            if (resolvedUser.current !== userId) setLoading(true);
             try {
                 const token = await getToken();
                 const { data } = await axios.get('/api/verification/data', { headers: { Authorization: 'Bearer ' + token } });
-                if (active) { setVerification(data.verification); setError(''); }
-            } catch (err) { if (active) { setVerification(null); setError(err.response?.data?.message || 'Unable to load verification'); } }
-            finally { if (active) setLoading(false); }
+                if (active && version === requestVersion.current) { resolvedUser.current = userId; setVerification(data.verification); setError(''); }
+            } catch (err) { if (active && version === requestVersion.current) { setError(err.response?.data?.message || 'Unable to load verification'); } }
+            finally { inFlight = false; if (active && version === requestVersion.current) setLoading(false); }
         };
-        if (isAuthLoaded) load();
+        if (isAuthLoaded && (!userId || resolvedUser.current !== userId)) load();
         const refresh = () => load();
-        window.addEventListener('focus', refresh);
+        if (refreshOnFocus) window.addEventListener('focus', refresh);
         return () => { active = false; window.removeEventListener('focus', refresh); };
-    }, [user, getToken, isAuthLoaded]);
+    }, [userId, getToken, isAuthLoaded, refreshOnFocus]);
     return { verification, setVerification, loading, error };
 }
 export default function VerificationStatus({ state }) {
@@ -46,4 +54,3 @@ export default function VerificationStatus({ state }) {
         </>}
     </section>;
 }
-

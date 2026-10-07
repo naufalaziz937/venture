@@ -145,3 +145,40 @@ test('image proxy hides other users documents and never returns Cloudinary URLs 
     assert.equal(result.status,404);
     assert.equal(fetched,false);
 });
+test('multipart submit receives real image Files and persists only storage asset identifiers', async () => {
+    const bytes = new Uint8Array([137,80,78,71,13,10,26,10]);
+    const form = new FormData();
+    form.append('data',JSON.stringify(data));
+    form.append('documentImage',new File([bytes],'camera.png',{ type: 'image/png' }));
+    form.append('selfieImage',new File([bytes],'selfie.png',{ type: 'image/png' }));
+    let stored, uploads = 0;
+    const model = {
+        init: async () => {}, updateOne: async () => {},
+        findOneAndUpdate(filter, update) {
+            if (filter.submissionLock) {
+                stored = update.$set;
+                return Promise.resolve({ _id: 'submission', ...stored });
+            }
+            return { select: async () => ({ _id: 'submission' }) };
+        },
+    };
+    const post = await handler('app/api/verification/submit/route.js','POST', {
+        RentalVerification: model, randomUUID: () => 'synthetic-lock',
+        verificationUser: async () => ({ user: { _id: 'synthetic-owner' } }),
+        verificationResponse: response, verificationSummary: record => ({ status: record.status }),
+        verificationError: error => { throw error; }, validateVerification, Buffer,
+        uploadIdentityImage: async file => {
+            assert.ok(file instanceof File);
+            assert.equal(file.type,'image/png');
+            assert.deepEqual(new Uint8Array(await file.arrayBuffer()),bytes);
+            return { publicId: 'synthetic-private-' + (++uploads), format: 'png' };
+        },
+        deleteIdentityImages: async () => {},
+    });
+    const result = await post(new Request('http://localhost/api/verification/submit',{ method: 'POST', body: form }));
+    assert.equal(result.status,201);
+    assert.equal(result.body.verification.status,'PENDING');
+    assert.equal(uploads,2);
+    assert.deepEqual(stored.documentImage,{ publicId: 'synthetic-private-1', format: 'png' });
+    assert.deepEqual(stored.selfieImage,{ publicId: 'synthetic-private-2', format: 'png' });
+});
