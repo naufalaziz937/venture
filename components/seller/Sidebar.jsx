@@ -11,6 +11,7 @@ const SideBar = () => {
         { name: 'Add Product', path: '/seller/add-product', icon: assets.add_icon },
         { name: 'Product List', path: '/seller/product-list', icon: assets.product_list_icon },
         { name: 'User Management', path: '/seller/user-list', icon: assets.user },
+        { name: 'Verifications', path: '/seller/verifications', icon: assets.user },
         { name: 'Orders', path: '/seller/orders', icon: assets.order_icon },
         { name: 'Active Rentals', path: '/seller/rentals', icon: assets.order_icon },
         { name: 'Return Console', path: '/seller/returns', icon: assets.product_list_icon },

@@ -5,8 +5,11 @@ import axios from "axios";
 import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import VerificationStatus, { useVerification } from '@/components/VerificationStatus';
 
 const OrderSummary = () => {
+  const verificationState = useVerification();
+  const identityVerified = verificationState.verification?.status === 'VERIFIED' && !verificationState.loading && !verificationState.error;
   const {
     router,
     getCartCount,
@@ -149,6 +152,7 @@ const OrderSummary = () => {
 
   // Buat order
   const createOrder = async () => {
+    if (!identityVerified) return toast.error('Verify your identity before completing your rental.');
     try {
       if (!selectedAddress) {
         toast.error("Pilih alamat terlebih dahulu");
@@ -203,6 +207,7 @@ const OrderSummary = () => {
   };
 
   const createOrderStripe = async () => {
+    if (!identityVerified) return toast.error('Verify your identity before completing your rental.');
     try {
 
       if (!selectedAddress) {
@@ -258,6 +263,7 @@ const OrderSummary = () => {
     <div className="w-full md:w-96 bg-gray-50 p-5">
       <h2 className="text-2xl font-medium text-gray-700">Order Summary</h2>
       <hr className="my-5 border-gray-300" />
+      <VerificationStatus state={verificationState} />
 
       <div className="mb-6">
         <p className="block text-sm font-medium text-gray-600 mb-2">Rental period</p>
@@ -412,7 +418,7 @@ const OrderSummary = () => {
         !isPlacedOrderClicked ? (
           <button
             onClick={() => setIsPlacedOrderClicked(true)}
-            disabled={checkingAvailability || !availability?.available}
+            disabled={!identityVerified || checkingAvailability || !availability?.available}
             className="w-full mt-5 py-3 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Place Order
@@ -421,12 +427,14 @@ const OrderSummary = () => {
           <div className="flex gap-2">
             <button
               onClick={createOrder}
+              disabled={!identityVerified}
               className="w-full mt-5 py-3 bg-green-600 text-white rounded hover:bg-green-700"
             >
               Cash On Delivery
             </button>
             <button
               onClick={createOrderStripe}
+              disabled={!identityVerified}
               className="w-full flex justify-center items-center border border-indigo-500 bg-white hover:bg-gray-100 mt-5 py-3  "
             >
               <Image className="w-12" src={assets.stripe_logo} alt="" />

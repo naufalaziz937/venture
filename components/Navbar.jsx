@@ -11,8 +11,10 @@ import Link from "next/link";
 import { useAppContext } from "@/context/AppContext";
 import Image from "next/image";
 import { useClerk, UserButton } from "@clerk/nextjs";
+import { useVerification, VerificationBadge } from '@/components/VerificationStatus';
 
 const Navbar = () => {
+  const { verification } = useVerification();
   const { isSeller, router, user } = useAppContext();
   const { openSignIn } = useClerk();
   const [searchInput, setSearchInput] = useState("");
@@ -88,6 +90,7 @@ const Navbar = () => {
           {user ? (
             <UserButton>
               <UserButton.MenuItems>
+                <UserButton.Action label="Identity Verification" labelIcon={<VerificationBadge status={verification?.status} />} onClick={() => router.push("/account/verification")} />
                 <UserButton.Action
                   label="Cart"
                   labelIcon={<CartIcon />}
@@ -124,6 +127,7 @@ const Navbar = () => {
           {user ? (
             <UserButton>
               <UserButton.MenuItems>
+                <UserButton.Action label="Identity Verification" labelIcon={<VerificationBadge status={verification?.status} />} onClick={() => router.push("/account/verification")} />
                 <UserButton.Action
                   label="Home"
                   labelIcon={<HomeIcon />}

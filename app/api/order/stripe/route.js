@@ -14,6 +14,7 @@ import { releaseOrderReservations, reserveOrderItems } from '@/lib/reservations'
 import { calculateLateFeePerDay } from '@/lib/returnFlow.mjs';
 import { validateCheckoutKey } from '@/lib/payment.mjs';
 import { getActiveSanction } from '@/lib/sanctions';
+import { requireRentalVerification } from '@/lib/rentalVerification';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -43,6 +44,8 @@ export async function POST(request) {
         await connectDB();
         const user = await ensureMongoUser(userId);
         databaseUserId = user._id;
+        const verificationResponse = await requireRentalVerification(databaseUserId);
+        if (verificationResponse) return verificationResponse;
         const sanction = await getActiveSanction(databaseUserId);
         if (sanction) return NextResponse.json({ success: false, code: 'ACCOUNT_SANCTIONED', message: `Rental blocked: ${sanction.reason}`, sanction: { reason: sanction.reason, expiresAt: sanction.expiresAt } }, { status: 403 });
         const existingOrder = await Order.findOne({ userId: databaseUserId, checkoutKey });
